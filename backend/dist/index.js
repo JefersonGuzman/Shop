@@ -1,11 +1,8 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const http_1 = require("http");
-const mongoose_1 = __importDefault(require("mongoose"));
+const database_1 = require("./config/database");
 const app_1 = require("./app");
 const PORT = Number(process.env.PORT || 5000);
 const MONGODB_URI = process.env.MONGODB_URI || '';
@@ -15,11 +12,7 @@ async function start() {
             console.warn('MONGODB_URI no está configurado. El servidor arrancará sin DB.');
         }
         else {
-            await mongoose_1.default.connect(MONGODB_URI, {
-                maxPoolSize: 10,
-                serverSelectionTimeoutMS: 5000,
-                socketTimeoutMS: 45000,
-            });
+            await (0, database_1.connectToDatabase)();
             console.log('✅ MongoDB conectado');
         }
         const app = (0, app_1.createApp)();

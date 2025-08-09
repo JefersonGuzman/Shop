@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import productsRouter from './routes/products';
 import authRouter from './routes/auth';
+import chatRouter from './routes/chat';
 
 export function createApp(): Application {
   const app = express();
@@ -22,6 +23,7 @@ export function createApp(): Application {
   // Rutas API
   app.use('/api/products', productsRouter);
   app.use('/api/auth', authRouter);
+  app.use('/api/chat', chatRouter);
 
   return app;
 }

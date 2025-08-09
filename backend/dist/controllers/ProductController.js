@@ -22,6 +22,21 @@ class ProductController {
             res.status(500).json({ error: error.message || 'Server error' });
         }
     }
+    async searchProducts(req, res) {
+        try {
+            const { q, ...rest } = req.query;
+            if (!q) {
+                res.status(400).json({ error: 'Search query required (q)' });
+                return;
+            }
+            const merged = { ...rest, search: String(q) };
+            const result = await ProductService_1.ProductService.getProducts(merged);
+            res.json({ success: true, data: result.products, total: result.total, query: q });
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message || 'Server error' });
+        }
+    }
 }
 exports.ProductController = ProductController;
 //# sourceMappingURL=ProductController.js.map

@@ -10,6 +10,7 @@ const helmet_1 = __importDefault(require("helmet"));
 const compression_1 = __importDefault(require("compression"));
 const products_1 = __importDefault(require("./routes/products"));
 const auth_1 = __importDefault(require("./routes/auth"));
+const chat_1 = __importDefault(require("./routes/chat"));
 function createApp() {
     const app = (0, express_1.default)();
     // Middlewares base
@@ -24,6 +25,7 @@ function createApp() {
     // Rutas API
     app.use('/api/products', products_1.default);
     app.use('/api/auth', auth_1.default);
+    app.use('/api/chat', chat_1.default);
     return app;
 }
 exports.default = createApp;
