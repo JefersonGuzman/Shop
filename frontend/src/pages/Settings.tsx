@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:5000';
@@ -10,6 +10,22 @@ export default function Settings() {
   const [maxTokens, setMaxTokens] = useState(500);
   const [temperature, setTemperature] = useState(0.7);
   const [status, setStatus] = useState<string>('');
+
+  async function load() {
+    try {
+      const res = await axios.get(`${API_BASE}/api/admin/ai-config`, { params: { provider } });
+      const cfg = res.data?.data;
+      if (cfg) {
+        setModelName(cfg.modelName || '');
+        setMaxTokens(cfg.maxTokens ?? 500);
+        setTemperature(cfg.temperature ?? 0.7);
+      }
+    } catch {}
+  }
+
+  // Cargar al montar y al cambiar provider
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [provider]);
 
   async function save() {
     try {
