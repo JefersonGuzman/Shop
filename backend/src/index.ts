@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { createServer } from 'http';
-import mongoose from 'mongoose';
+import { connectToDatabase } from './config/database';
 import { createApp } from './app';
 
 const PORT = Number(process.env.PORT || 5000);
@@ -11,11 +11,7 @@ async function start(): Promise<void> {
     if (!MONGODB_URI) {
       console.warn('MONGODB_URI no está configurado. El servidor arrancará sin DB.');
     } else {
-      await mongoose.connect(MONGODB_URI, {
-        maxPoolSize: 10,
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 45000,
-      });
+      await connectToDatabase();
       console.log('✅ MongoDB conectado');
     }
 
