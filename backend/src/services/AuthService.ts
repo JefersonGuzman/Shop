@@ -2,9 +2,22 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 import { UserModel } from '../models/User';
-import type { LoginDTO } from '../schemas/auth';
+import type { LoginDTO, RegisterDTO } from '../schemas/auth';
 
 export class AuthService {
+  static async register(data: RegisterDTO): Promise<{ id: string }> {
+    const exists = await UserModel.findOne({ email: data.email });
+    if (exists) throw new Error('Email ya registrado');
+    const hash = await bcrypt.hash(data.password, 10);
+    const user = await UserModel.create({
+      email: data.email,
+      password: hash,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      role: 'customer',
+    });
+    return { id: (user._id as any).toString() };
+  }
   static async login(credentials: LoginDTO): Promise<{ accessToken: string; refreshToken: string } | null> {
     const user = await UserModel.findOne({ email: credentials.email, isActive: true });
     if (!user) return null;

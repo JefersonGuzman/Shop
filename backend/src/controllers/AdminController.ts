@@ -12,6 +12,16 @@ export class AdminController {
       res.status(400).json({ error: error.message || 'Bad request' });
     }
   }
+
+  async getAIConfig(req: Request, res: Response): Promise<void> {
+    try {
+      const provider = (req.query.provider as 'groq' | 'openai') || undefined;
+      const cfg = await AIConfigService.getActiveConfig(provider);
+      res.json({ success: true, data: cfg });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Server error' });
+    }
+  }
 }
 
 

@@ -21,6 +21,20 @@ export class AIConfigService {
       status: 'active',
     });
   }
+
+  static async getActiveConfig(provider?: 'groq' | 'openai') {
+    const query = provider ? { provider, isActive: true } : { isActive: true };
+    const doc = await AIConfigModel.findOne(query).sort({ updatedAt: -1 }).lean();
+    if (!doc) return null;
+    return {
+      provider: doc.provider,
+      modelName: doc.modelName,
+      maxTokens: doc.maxTokens,
+      temperature: doc.temperature,
+      // No retornamos apiKey por seguridad
+      hasKey: Boolean(doc.apiKey),
+    };
+  }
 }
 
 
