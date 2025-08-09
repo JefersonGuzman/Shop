@@ -11,7 +11,7 @@ const userSchema = new mongoose_1.Schema({
     isActive: { type: Boolean, default: true },
     lastLogin: { type: Date },
 }, { timestamps: true });
-userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
 exports.UserModel = (0, mongoose_1.model)('User', userSchema);

@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChatController = void 0;
+const ChatSession_1 = require("../models/ChatSession");
 const chat_1 = require("../schemas/chat");
 const AIService_1 = require("../services/AIService");
-const ChatSession_1 = require("../models/ChatSession");
 const aiService = new AIService_1.AIService();
 class ChatController {
     async processMessage(req, res) {

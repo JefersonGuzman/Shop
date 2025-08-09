@@ -8,6 +8,20 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_1 = require("../models/User");
 class AuthService {
+    static async register(data) {
+        const exists = await User_1.UserModel.findOne({ email: data.email });
+        if (exists)
+            throw new Error('Email ya registrado');
+        const hash = await bcrypt_1.default.hash(data.password, 10);
+        const user = await User_1.UserModel.create({
+            email: data.email,
+            password: hash,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            role: 'customer',
+        });
+        return { id: user._id.toString() };
+    }
     static async login(credentials) {
         const user = await User_1.UserModel.findOne({ email: credentials.email, isActive: true });
         if (!user)

@@ -4,13 +4,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createApp = createApp;
-const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
-const helmet_1 = __importDefault(require("helmet"));
 const compression_1 = __importDefault(require("compression"));
-const products_1 = __importDefault(require("./routes/products"));
+const cors_1 = __importDefault(require("cors"));
+const express_1 = __importDefault(require("express"));
+const helmet_1 = __importDefault(require("helmet"));
 const auth_1 = __importDefault(require("./routes/auth"));
 const chat_1 = __importDefault(require("./routes/chat"));
+const admin_1 = __importDefault(require("./routes/admin"));
+const products_1 = __importDefault(require("./routes/products"));
 function createApp() {
     const app = (0, express_1.default)();
     // Middlewares base
@@ -26,6 +27,7 @@ function createApp() {
     app.use('/api/products', products_1.default);
     app.use('/api/auth', auth_1.default);
     app.use('/api/chat', chat_1.default);
+    app.use('/api/admin', admin_1.default);
     return app;
 }
 exports.default = createApp;

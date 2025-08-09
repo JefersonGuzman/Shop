@@ -17,6 +17,20 @@ class AIConfigService {
             status: 'active',
         });
     }
+    static async getActiveConfig(provider) {
+        const query = provider ? { provider, isActive: true } : { isActive: true };
+        const doc = await AIConfig_1.AIConfigModel.findOne(query).sort({ updatedAt: -1 }).lean();
+        if (!doc)
+            return null;
+        return {
+            provider: doc.provider,
+            modelName: doc.modelName,
+            maxTokens: doc.maxTokens,
+            temperature: doc.temperature,
+            // No retornamos apiKey por seguridad
+            hasKey: Boolean(doc.apiKey),
+        };
+    }
 }
 exports.AIConfigService = AIConfigService;
 //# sourceMappingURL=AIConfigService.js.map
