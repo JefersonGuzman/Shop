@@ -2,6 +2,8 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import productsRouter from './routes/products';
+import authRouter from './routes/auth';
 
 export function createApp(): Application {
   const app = express();
@@ -16,6 +18,10 @@ export function createApp(): Application {
   app.get('/health', (_req: Request, res: Response) => {
     res.json({ status: 'OK', service: 'Makers Tech API', timestamp: new Date().toISOString() });
   });
+
+  // Rutas API
+  app.use('/api/products', productsRouter);
+  app.use('/api/auth', authRouter);
 
   return app;
 }

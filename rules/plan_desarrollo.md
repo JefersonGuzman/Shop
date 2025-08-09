@@ -17,19 +17,43 @@
 #### Fase 0 — Preparación y cimientos
 - [x] Analizar carpeta `rules/` y lineamientos
 - [x] Crear este plan y bitácora inicial
-- [ ] Definir estructura del repositorio (`backend/` y `frontend/`)
-- [ ] Configurar herramientas base: TypeScript, tsconfig, eslint/prettier, editorconfig
-- [ ] Configurar `dotenv` y `env` seguros (incluir `.env.example` sin secretos)
-- [ ] Configurar scripts de desarrollo y build
+- Definir estructura del repositorio
+  - [x] `backend/` (TypeScript + Express)
+  - [ ] `frontend/` (Vite + React + TS)
+- Herramientas base
+  - [x] TypeScript y `tsconfig` en `backend/`
+  - [ ] ESLint + Prettier
+  - [ ] `.editorconfig`
+- Gestión de entorno
+  - [x] `backend/env.sample` (sin secretos)
+  - [ ] Carga de variables en desarrollo y CI (segura)
+- Scripts
+  - [x] `backend`: `dev`, `build`, `start`
+  - [ ] `frontend`: `dev`, `build`, `preview`
 - [ ] (Opcional) CI mínima y husky para lint-staged
 
 #### Fase 1 — Backend MVP (API REST)
 - [ ] Estructura base `backend/src/{controllers,services,models,routes,middleware,schemas,config}`
 - [ ] Conexión a MongoDB Atlas con pool y timeouts; manejo de errores robusto
-- [ ] Modelos Mongoose: `User`, `Product`, `ChatSession`, `AIConfig`
-- [ ] Middlewares: `authenticateToken`, `requireAdmin`, `validateBody`/`validateQuery`
-- [ ] Servicios: `AuthService`, `ProductService`, `AIService` (skeleton con fallback)
-- [ ] Rutas: `/api/auth`, `/api/products`, `/api/chat`, `/api/recommendations`, `/api/admin`
+- Modelos Mongoose
+  - [ ] `User`
+  - [ ] `Product`
+  - [ ] `ChatSession`
+  - [ ] `AIConfig`
+- Middlewares
+  - [ ] `authenticateToken`
+  - [ ] `requireAdmin`
+  - [ ] `validateBody` / `validateQuery`
+- Servicios
+  - [ ] `AuthService`
+  - [ ] `ProductService`
+  - [ ] `AIService` (skeleton con fallback)
+- Rutas
+  - [ ] `/api/auth`
+  - [ ] `/api/products`
+  - [ ] `/api/chat`
+  - [ ] `/api/recommendations`
+  - [ ] `/api/admin`
 - [ ] Zod schemas alineados con `rules/esquema_validacion_zod.md`
 - [ ] Índices críticos e inicialización en desarrollo
 - [ ] Tests básicos (Jest + Supertest) para rutas core y middlewares
@@ -51,6 +75,36 @@
 - [ ] Registro de interacciones y actualización de preferencias
 
 #### Fase 3 — Administración (Dashboard y settings IA)
+### Criterios de aceptación — Backend MVP
+- [x] `GET /health` responde `{ status: 'OK', service, timestamp }`
+- [ ] `GET /api/products` retorna lista paginada con filtros válidos
+- [ ] `GET /api/products/search` busca por texto y filtra
+- [ ] `POST /api/auth/login` valida y responde tokens; error en credenciales inválidas
+- [ ] `GET /api/auth/me` retorna 401 sin token y datos de usuario con token
+- [ ] `POST /api/chat/message` valida con Zod y devuelve estructura esperada
+- [ ] Logs básicos y manejo de errores consistente (formato JSON)
+
+---
+
+### Sprint 1 — Objetivos (48–72h)
+- [ ] Conexión MongoDB Atlas y helper de DB con timeouts
+- [ ] Modelo `Product` + índices + seed mínima en desarrollo
+- [ ] `ProductService.getProducts` y `GET /api/products`
+- [ ] `ProductController.searchProducts` y `GET /api/products/search`
+- [ ] Middleware `validateQuery`/`validateBody` con Zod
+- [ ] `AuthService.login` + `POST /api/auth/login` (sin registro aún)
+
+---
+
+### Backlog técnico
+- [ ] Logger con `winston` y niveles por entorno
+- [ ] Middleware de errores centralizado
+- [ ] Rate limiting y `helmet` tuning por entorno
+- [ ] Tests (Jest + Supertest) para products y auth
+- [ ] Dockerfile y compose para dev
+- [ ] CI mínima (lint + build)
+
+---
 - [ ] Dashboard con Recharts: stock por categoría, marcas, tendencias de chat
 - [ ] Gestión de inventario: CRUD de productos y alertas de stock
 - [ ] Configuración IA: API keys, selección de modelos, parámetros, test de conexión
@@ -77,16 +131,22 @@
 ---
 
 ### Próximas acciones inmediatas
-1) Crear estructura de carpetas `backend/` y `frontend/` con configuraciones base (TS, lint, scripts)
-2) Implementar `backend` con conexión MongoDB, modelos y middlewares
-3) Exponer rutas mínimas de salud y `auth`/`products` (GET) para validar pipeline
+- [x] Backend: endpoint `/health` para validación rápida
+- [ ] Backend: conexión a MongoDB Atlas y helper de conexión
+- [ ] Backend: modelos base (`User`, `Product`, `ChatSession`, `AIConfig`)
+- [ ] Backend: rutas mínimas `GET /api/products` y `GET /api/auth/me`
+- [ ] Tooling: configurar ESLint, Prettier y `.editorconfig`
+- [ ] Frontend: bootstrap con Vite + React + TS
 
 ---
 
 ### Bitácora de avances
 - [x] 2025-08-09 — Revisión integral de `rules/` y extracción de lineamientos clave
 - [x] 2025-08-09 — Creación de `rules/plan_desarrollo.md` con roadmap, DoD y próximas acciones
-- [ ] {pendiente} — Estructura inicial del repositorio y configuración tooling
+- [x] 2025-08-09 — Scaffold inicial de `backend/` (TS + Express), endpoint `/health`, build OK
+- [x] 2025-08-09 — Commits iniciales: `docs` (plan) y `feat` (backend scaffold)
+- [ ] 2025-08-09 — Definición Sprint 1 y criterios de aceptación del Backend MVP
+- [ ] {pendiente} — Estructura `frontend/` y configuración de tooling compartido
 
 Nota: Actualizar esta sección con cada hito relevante (breve descripción y fecha).
 
