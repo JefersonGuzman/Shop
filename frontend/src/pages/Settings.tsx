@@ -10,6 +10,7 @@ export default function Settings() {
   const [maxTokens, setMaxTokens] = useState(500);
   const [temperature, setTemperature] = useState(0.7);
   const [status, setStatus] = useState<string>('');
+  const [hasKey, setHasKey] = useState<boolean>(false);
 
   async function load() {
     try {
@@ -19,6 +20,7 @@ export default function Settings() {
         setModelName(cfg.modelName || '');
         setMaxTokens(cfg.maxTokens ?? 500);
         setTemperature(cfg.temperature ?? 0.7);
+        setHasKey(Boolean(cfg.hasKey));
       }
     } catch {}
   }
@@ -37,6 +39,8 @@ export default function Settings() {
         temperature,
       });
       setStatus('Configuración guardada correctamente.');
+      setHasKey(Boolean(apiKey) || hasKey);
+      setApiKey(''); // por seguridad, no persistimos ni mostramos el valor
     } catch (e: any) {
       setStatus('Error guardando configuración.');
     }
@@ -55,7 +59,12 @@ export default function Settings() {
         </label>
         <label>
           API Key
-          <input value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder="Ingresa tu API key" />
+          <input
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder={hasKey ? 'API Key ya configurada (ingresa para reemplazar)' : 'Ingresa tu API key'}
+          />
+          {hasKey && <small style={{ color: '#0b2545' }}>Hay una API key guardada en el servidor.</small>}
         </label>
         <label>
           Modelo
