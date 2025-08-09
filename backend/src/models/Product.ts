@@ -48,7 +48,6 @@ productSchema.index({ category: 1, brand: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ stock: 1 });
 productSchema.index({ isActive: 1 });
-productSchema.index({ sku: 1 }, { unique: true });
 
 export const ProductModel = model<ProductDocument>('Product', productSchema);
 
