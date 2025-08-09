@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+
 import { UserModel } from '../models/User';
 import type { LoginDTO } from '../schemas/auth';
 

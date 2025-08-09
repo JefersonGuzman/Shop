@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
+
+import { ChatSessionModel } from '../models/ChatSession';
 import { ChatMessageSchema } from '../schemas/chat';
 import { AIService } from '../services/AIService';
-import { ChatSessionModel } from '../models/ChatSession';
 
 const aiService = new AIService();
 

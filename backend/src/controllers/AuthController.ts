@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { AuthService } from '../services/AuthService';
-import { LoginSchema } from '../schemas/auth';
+
 import { AuthenticatedRequest } from '../middleware/auth';
+import { LoginSchema } from '../schemas/auth';
+import { AuthService } from '../services/AuthService';
 
 export class AuthController {
   async login(req: Request, res: Response): Promise<void> {

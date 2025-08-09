@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { ProductService } from '../services/ProductService';
+
 import type { ProductQueryDTO } from '../schemas/product';
+import { ProductService } from '../services/ProductService';
 
 export class ProductController {
   async getProducts(req: Request, res: Response): Promise<void> {

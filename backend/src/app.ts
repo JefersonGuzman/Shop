@@ -1,10 +1,11 @@
-import express, { Application, Request, Response } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
 import compression from 'compression';
-import productsRouter from './routes/products';
+import cors from 'cors';
+import express, { Application, Request, Response } from 'express';
+import helmet from 'helmet';
+
 import authRouter from './routes/auth';
 import chatRouter from './routes/chat';
+import productsRouter from './routes/products';
 
 export function createApp(): Application {
   const app = express();
