@@ -5,6 +5,7 @@ import helmet from 'helmet';
 
 import authRouter from './routes/auth';
 import chatRouter from './routes/chat';
+import adminRouter from './routes/admin';
 import productsRouter from './routes/products';
 
 export function createApp(): Application {
@@ -25,6 +26,7 @@ export function createApp(): Application {
   app.use('/api/products', productsRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/chat', chatRouter);
+  app.use('/api/admin', adminRouter);
 
   return app;
 }
