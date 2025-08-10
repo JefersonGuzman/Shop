@@ -20,4 +20,18 @@ export const ProductQuerySchema = z
 
 export type ProductQueryDTO = z.infer<typeof ProductQuerySchema>;
 
+export const ProductCreateSchema = z.object({
+  name: z.string().min(1),
+  brand: z.string().min(1),
+  category: z.string().min(1),
+  price: z.number().min(0),
+  stock: z.number().min(0),
+  sku: z.string().min(1),
+});
+
+export const ProductUpdateSchema = ProductCreateSchema.partial();
+
+export type ProductCreateDTO = z.infer<typeof ProductCreateSchema>;
+export type ProductUpdateDTO = z.infer<typeof ProductUpdateSchema>;
+
 

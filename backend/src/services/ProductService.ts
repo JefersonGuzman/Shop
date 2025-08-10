@@ -1,6 +1,6 @@
 import { ProductModel } from '../models/Product';
 import type { ProductDocument } from '../models/Product';
-import type { ProductQueryDTO } from '../schemas/product';
+import type { ProductQueryDTO, ProductCreateDTO, ProductUpdateDTO } from '../schemas/product';
 
 export class ProductService {
   static async getProducts(query: ProductQueryDTO): Promise<{
@@ -36,6 +36,23 @@ export class ProductService {
     ]);
 
     return { products: products as unknown as ProductDocument[], total };
+  }
+
+  static async createProduct(data: ProductCreateDTO): Promise<ProductDocument> {
+    const exists = await ProductModel.findOne({ sku: data.sku });
+    if (exists) throw new Error('SKU duplicado');
+    const doc = await ProductModel.create({ ...data, specifications: {}, images: [], description: '' });
+    return doc as unknown as ProductDocument;
+  }
+
+  static async updateProduct(id: string, data: ProductUpdateDTO): Promise<ProductDocument | null> {
+    const updated = await ProductModel.findByIdAndUpdate(id, data, { new: true });
+    return updated as unknown as ProductDocument | null;
+  }
+
+  static async deleteProduct(id: string): Promise<boolean> {
+    await ProductModel.findByIdAndDelete(id);
+    return true;
   }
 }
 

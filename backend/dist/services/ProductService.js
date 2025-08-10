@@ -24,6 +24,21 @@ class ProductService {
         ]);
         return { products: products, total };
     }
+    static async createProduct(data) {
+        const exists = await Product_1.ProductModel.findOne({ sku: data.sku });
+        if (exists)
+            throw new Error('SKU duplicado');
+        const doc = await Product_1.ProductModel.create({ ...data, specifications: {}, images: [], description: '' });
+        return doc;
+    }
+    static async updateProduct(id, data) {
+        const updated = await Product_1.ProductModel.findByIdAndUpdate(id, data, { new: true });
+        return updated;
+    }
+    static async deleteProduct(id) {
+        await Product_1.ProductModel.findByIdAndDelete(id);
+        return true;
+    }
 }
 exports.ProductService = ProductService;
 //# sourceMappingURL=ProductService.js.map

@@ -7,6 +7,9 @@ import authRouter from './routes/auth';
 import chatRouter from './routes/chat';
 import adminRouter from './routes/admin';
 import productsRouter from './routes/products';
+import offersRouter from './routes/offers';
+import categoriesRouter from './routes/categories';
+import brandsRouter from './routes/brands';
 
 export function createApp(): Application {
   const app = express();
@@ -24,9 +27,12 @@ export function createApp(): Application {
 
   // Rutas API
   app.use('/api/products', productsRouter);
+  app.use('/api/categories', categoriesRouter);
+  app.use('/api/brands', brandsRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/chat', chatRouter);
   app.use('/api/admin', adminRouter);
+  app.use('/api/offers', offersRouter);
 
   return app;
 }

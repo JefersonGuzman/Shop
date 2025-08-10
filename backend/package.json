@@ -9,7 +9,13 @@
     "start": "node dist/index.js",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
-    "seed:products": "ts-node-dev --transpile-only src/scripts/seedProducts.ts"
+    "seed:products": "ts-node-dev --transpile-only src/scripts/seedProducts.ts",
+    "seed:roles": "ts-node src/scripts/seedRoles.ts",
+    "seed:admin": "ts-node src/scripts/createAdmin.ts",
+    "db:init": "ts-node src/scripts/initializeAll.ts",
+    "db:categories": "ts-node src/scripts/initializeCategories.ts",
+    "db:orders": "ts-node src/scripts/initializeOrders.ts",
+    "db:offers": "ts-node src/scripts/initializeOffers.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

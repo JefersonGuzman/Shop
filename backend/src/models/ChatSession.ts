@@ -45,7 +45,7 @@ const chatSessionSchema = new Schema<ChatSessionDocument>(
 );
 
 chatSessionSchema.index({ userId: 1, createdAt: -1 });
-chatSessionSchema.index({ sessionId: 1 });
+// sessionId ya es unique, evita índice duplicado
 chatSessionSchema.index({ isActive: 1 });
 
 export const ChatSessionModel = model<ChatSessionDocument>('ChatSession', chatSessionSchema);

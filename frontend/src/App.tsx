@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import './App.css';
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string; timestamp?: string };
 
@@ -51,32 +50,74 @@ export default function App() {
   }
 
   return (
-    <div className="chat-container" style={{ maxWidth: 720, margin: '0 auto', padding: 16 }}>
-      <h1>Makers Tech ChatBot</h1>
-      <div className="messages" style={{ border: '1px solid #ddd', borderRadius: 8, padding: 12, height: 420, overflow: 'auto' }}>
+    <div className="h-full flex flex-col bg-muted max-w-4xl mx-auto w-full border-x">
+      {/* Header */}
+      <div className="shrink-0 border-b border-border bg-card">
+        <div className="p-4">
+          <h1 className="text-lg font-semibold text-text mb-2">Chat de Soporte</h1>
+          <p className="text-sm text-mutedText">¿Cómo podemos ayudarte hoy? No dudes en hacer cualquier pregunta sobre nuestros productos, servicios o pedidos.</p>
+        </div>
+      </div>
+
+      {/* Messages area */}
+      <div className="flex-1 overflow-y-auto">
         {messages.map((m, idx) => (
-          <div key={idx} style={{ margin: '8px 0', textAlign: m.role === 'user' ? 'right' : 'left' }}>
-            <div style={{ display: 'inline-block', background: m.role === 'user' ? '#e6f0ff' : '#f5f5f5', padding: '8px 12px', borderRadius: 8 }}>
-              <strong>{m.role === 'user' ? 'Tú' : 'TechBot'}: </strong>
-              <span>{m.content}</span>
+          <div key={idx} className={`flex items-end gap-3 p-4 ${m.role === 'user' ? 'justify-end' : ''}`}>
+            {m.role === 'assistant' && (
+              <div
+                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 shrink-0"
+                style={{ backgroundImage: 'url(https://i.pravatar.cc/150?u=a042581f4e29026704d)' }}
+              />
+            )}
+            <div className={`flex flex-1 flex-col gap-1 ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+              <p className={`text-mutedText text-[13px] font-normal leading-normal max-w-[360px] ${m.role === 'user' ? 'text-right' : ''}`}>
+                {m.role === 'user' ? 'Tú' : 'Bot de Soporte'}
+              </p>
+              <p className={`text-base font-normal leading-normal flex max-w-[360px] rounded-xl px-4 py-3 ${m.role === 'user' ? 'bg-primary text-white' : 'bg-card text-text border border-border'}`}>
+                {m.content}
+              </p>
             </div>
+            {m.role === 'user' && (
+              <div
+                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 shrink-0"
+                style={{ backgroundImage: 'url(https://i.pravatar.cc/150?u=a042581f4e29026704e)' }}
+              />
+            )}
           </div>
         ))}
         <div ref={endRef} />
       </div>
-      <div className="input" style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-          placeholder="Escribe tu mensaje..."
-          style={{ flex: 1, padding: 10, borderRadius: 8, border: '1px solid #ccc' }}
-        />
-        <button onClick={sendMessage} disabled={loading} style={{ padding: '10px 16px' }}>
-          {loading ? 'Enviando...' : 'Enviar'}
-        </button>
+
+      {/* Fixed Input Bar - Always at bottom */}
+      <div className="shrink-0 border-t border-border bg-card p-4">
+        <div className="flex items-center gap-3">
+          <input
+            placeholder="Escribe tu mensaje..."
+            className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-text focus:outline-0 focus:ring-0 border border-border bg-background h-full placeholder:text-mutedText px-4 rounded-r-none border-r-0 pr-2 text-base font-normal leading-normal"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          />
+          <div className="flex bg-background border border-border border-l-0 items-center justify-center pr-2 rounded-r-xl">
+            <button
+                onClick={sendMessage}
+                disabled={loading}
+                className="min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-8 px-4 bg-primary text-white text-sm font-medium hidden md:block hover:bg-primary/90 active:bg-primary/80 transition-colors shadow-sm"
+              >
+                <span className="truncate">{loading ? 'Enviando...' : 'Enviar'}</span>
+              </button>
+              <button
+                onClick={sendMessage}
+                disabled={loading}
+                className="min-w-[40px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-8 px-2 bg-primary text-white text-sm font-medium md:hidden hover:bg-primary/90 active:bg-primary/80 transition-colors shadow-sm"
+              >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10.894 2.894a1 1 0 00-1.788 0l-6 11a1 1 0 00.894 1.449h12a1 1 0 00.894-1.449l-6-11zM10 12a1 1 0 110-2 1 1 0 010 2z" />
+                  </svg>
+            </button>
+          </div>
+        </div>
       </div>
-      <p style={{ marginTop: 8, color: '#666' }}>Session: {sessionId}</p>
     </div>
   );
 }

@@ -35,6 +35,35 @@ export class AuthService {
 
     return { accessToken, refreshToken };
   }
+
+  static async refresh(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+    try {
+      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || '') as { userId: string };
+      // Verificar que el usuario sigue activo
+      const user = await UserModel.findById(decoded.userId).lean();
+      if (!user || user.isActive === false) throw new Error('Usuario no activo');
+
+      const accessToken = jwt.sign(
+        { userId: decoded.userId, role: user.role },
+        process.env.JWT_SECRET || '',
+        { expiresIn: (process.env.JWT_EXPIRES_IN as any) || '15m' } as jwt.SignOptions,
+      );
+      const newRefreshToken = jwt.sign(
+        { userId: decoded.userId },
+        process.env.JWT_REFRESH_SECRET || '',
+        { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN as any) || '7d' } as jwt.SignOptions,
+      );
+
+      return { accessToken, refreshToken: newRefreshToken };
+    } catch (err) {
+      throw new Error('Refresh token inválido');
+    }
+  }
+
+  // Para MVP, logout es stateless (el cliente borra tokens). Mantener aquí por compatibilidad.
+  static async logout(): Promise<void> {
+    return;
+  }
 }
 
 

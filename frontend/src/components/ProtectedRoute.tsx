@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import axios from 'axios';
-
-const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:5000';
 
 type Props = {
-  children: JSX.Element;
+  children: React.ReactElement;
   requireAdmin?: boolean;
 };
+
+function decodeRoleFromJwt(token: string): 'admin' | 'employee' | 'customer' | null {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    const role = payload?.role as 'admin' | 'employee' | 'customer' | undefined;
+    return role ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export default function ProtectedRoute({ children, requireAdmin = false }: Props) {
   const [authorized, setAuthorized] = useState<boolean | null>(null);
@@ -18,14 +25,15 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Props
       setAuthorized(false);
       return;
     }
-    axios
-      .get(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => {
-        const role = res.data?.user?.role || 'customer';
-        if (requireAdmin) setAuthorized(role === 'admin');
-        else setAuthorized(true);
-      })
-      .catch(() => setAuthorized(false));
+
+    const role = decodeRoleFromJwt(token);
+    if (!role) {
+      setAuthorized(false);
+      return;
+    }
+
+    if (requireAdmin) setAuthorized(role === 'admin' || role === 'employee');
+    else setAuthorized(true);
   }, [requireAdmin]);
 
   if (authorized === null) return <div style={{ padding: 24 }}>Cargando...</div>;

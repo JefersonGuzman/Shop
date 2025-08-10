@@ -2,7 +2,7 @@ import { NextFunction, Response, Request } from 'express';
 import jwt from 'jsonwebtoken';
 
 export interface AuthenticatedRequest extends Request {
-  user?: { userId: string; role: 'admin' | 'customer' };
+  user?: { userId: string; role: 'admin' | 'employee' | 'customer' };
 }
 
 export function authenticateToken(

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductController = void 0;
+const product_1 = require("../schemas/product");
 const ProductService_1 = require("../services/ProductService");
 class ProductController {
     async getProducts(req, res) {
@@ -35,6 +36,35 @@ class ProductController {
         }
         catch (error) {
             res.status(500).json({ error: error.message || 'Server error' });
+        }
+    }
+    async createProduct(req, res) {
+        try {
+            const payload = product_1.ProductCreateSchema.parse(req.body);
+            const result = await ProductService_1.ProductService.createProduct(payload);
+            res.status(201).json({ success: true, data: result });
+        }
+        catch (error) {
+            res.status(400).json({ error: error.message || 'Bad request' });
+        }
+    }
+    async updateProduct(req, res) {
+        try {
+            const payload = product_1.ProductUpdateSchema.parse(req.body);
+            const updated = await ProductService_1.ProductService.updateProduct(req.params.id, payload);
+            res.json({ success: true, data: updated });
+        }
+        catch (error) {
+            res.status(400).json({ error: error.message || 'Bad request' });
+        }
+    }
+    async deleteProduct(req, res) {
+        try {
+            await ProductService_1.ProductService.deleteProduct(req.params.id);
+            res.json({ success: true });
+        }
+        catch (error) {
+            res.status(400).json({ error: error.message || 'Bad request' });
         }
     }
 }
