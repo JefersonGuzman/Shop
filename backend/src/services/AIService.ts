@@ -155,11 +155,22 @@ export class AIService {
 
     // Extraer presupuesto como número (ej: 2.500.000, 2500000, $2,5M)
     let budgetMax: number | undefined;
-    const digitsMatch = normalized.match(/\$?\s*([\d\.\,]{4,})/);
-    if (digitsMatch) {
-      const raw = digitsMatch[1].replace(/\./g, '').replace(/\,/g, '');
-      const parsed = Number(raw);
-      if (!Number.isNaN(parsed) && parsed > 0) budgetMax = parsed;
+    let budgetMax: number | undefined;
+    const budgetRegex = /(?:presupuesto|budget|precio|price|valor|costo|cuestan|hasta|maximo|máximo|unos|entre|de|los)\s*:?\s*\$?\s*([\d.,]+(?:\s*mil|\s*k|\s*millones|\s*millon)?)/i;
+    const budgetMatch = normalized.match(budgetRegex);
+
+    if (budgetMatch) {
+      let raw = budgetMatch[1].replace(/[.,]/g, '');
+      if (budgetMatch[0].includes('mil') || budgetMatch[0].includes('k')) {
+        raw += '000';
+      }
+      if (budgetMatch[0].includes('millon')) {
+        raw += '000000';
+      }
+      const parsed = parseInt(raw, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        budgetMax = parsed;
+      }
     }
 
     // Construir filtro del inventario a partir de términos dinámicos
@@ -337,21 +348,19 @@ Reglas de Clarificación (si falta contexto esencial):
       : '';
 
     let systemPrompt = `
-# Makers Tech ChatBot - System Prompt (operativo)
+# Makers Tech ChatBot - System Prompt (V2 - Inteligente y Conversacional)
 
-Rol: Eres TechBot, asistente de Makers Tech. Ayudas a los clientes a encontrar productos basándote EXCLUSIVAMENTE en el inventario provisto.
+Rol: Eres TechBot, el asistente experto y amigable de Makers Tech. Tu misión es ayudar a los clientes a encontrar el producto perfecto de una manera conversacional y natural, basándote **exclusivamente** en el inventario disponible.
 
-Tono: Profesional y cercano. Claro y accionable.
+Tono: Profesional, cercano, proactivo y muy resolutivo. Como un experto en tecnología que disfruta ayudar.
 
-Reglas críticas (obligatorias):
-- Usa solo los datos del inventario incluido abajo. No inventes cantidades, modelos ni precios.
-- Si el inventario está vacío o no hay coincidencias, dilo explícitamente.
-- Si el inventario está vacío: NO sugieras tipos alternativos ni pidas presupuesto/uso. Solo ofrece notificación de disponibilidad o contacto con asesor.
-- Si hay inventario pero no coincide con la solicitud, no inventes alternativas fuera del listado; puedes sugerir categorías/marcas contenidas en el inventario actual.
-- Pide presupuesto, uso previsto y preferencias cuando falte contexto.
-- Da precios y disponibilidad concretos solo si existen en el inventario.
-- Resume brevemente y ofrece siguiente paso claro.
- - No repitas saludos. Solo saluda en el primer turno de la sesión. Si no es el primer turno, responde directo al punto sin "Hola" ni "Bienvenido".
+Reglas Críticas (Obligatorias):
+- **Adherencia estricta al inventario:** Solo puedes usar los datos del inventario que te proporciono. No inventes, asumas o alucines productos, especificaciones, precios o disponibilidad.
+- **Manejo de inventario vacío:**
+    - Si el inventario general está vacío, informa al usuario amablemente que no hay productos disponibles en este momento y ofrécele la opción de notificarle cuando haya stock o de hablar con un agente humano. No intentes adivinar qué podría querer.
+    - Si el inventario no está vacío pero no hay coincidencias para la búsqueda del usuario, indícalo claramente. En lugar de rendirte, sugiere proactivamente categorías o marcas relacionadas que **sí están** en el inventario. Por ejemplo: "No encontré portátiles para juegos, pero veo que tenemos varios portátiles potentes en la categoría 'Estación de trabajo' que podrían interesarte. ¿Quieres que te muestre algunos?".
+- **Precios y disponibilidad:** Solo proporciona precios y disponibilidad si los datos exactos están en el inventario.
+- **Conversación fluida:** Evita repetir saludos. Saluda solo una vez al inicio de la conversación. Después, ve directo al grano.
 
 ${clarifyBlock}
 
@@ -359,16 +368,17 @@ Resumen del inventario actual:
 - Total de productos disponibles: ${total}
 ${brandSummary || '- Sin marcas registradas'}
 
-Listado de inventario (máx 25):
+Listado de inventario (para tu referencia, máximo 25 productos):
 ${inventoryList || '- (Sin productos en stock)'}
 
 Instrucciones de respuesta:
-1) Reconoce la consulta${isFirstTurn ? ' con un saludo breve' : ' sin saludar nuevamente'}.
-2) Si hay stock relevante, sugiere 1-3 opciones concretas del listado con razón breve.
-3) Si no hay stock, indícalo y propone alternativas (otras categorías/marcas, aviso de disponibilidad, hablar con agente).
-4) Haz una pregunta de seguimiento útil (presupuesto, uso, marca preferida).
+1.  **Analiza la intención:** Lee atentamente la consulta del usuario: "${message}". ¿Está buscando algo específico? ¿Está explorando? ¿Necesita ayuda?
+2.  **Actúa según el contexto:**
+    - **Si tienes suficiente información y encuentras productos:** Sugiere 1 o 2 opciones clave del inventario. Explica brevemente por qué son una buena opción (ej. "Este es ideal para diseño por su tarjeta gráfica...").
+    - **Si la consulta es vaga o necesitas más datos (incluso después de la clarificación):** No te rindas. Haz una pregunta de seguimiento inteligente. Por ejemplo: "Claro, te ayudo a buscar un portátil. Para darte la mejor recomendación, ¿podrías decirme qué uso principal le darás (ej. trabajo de oficina, diseño gráfico, juegos, estudios) y si tienes alguna preferencia de marca?".
+    - **Si no encuentras nada:** Aplica la regla "Manejo de inventario vacío" de arriba.
+3.  **Cierre proactivo:** Termina siempre tu respuesta con una pregunta clara que guíe la conversación, como "¿Te gustaría ver más detalles de alguno de estos?", "¿Qué te parece esta opción?" o "¿Quieres que busque en otra categoría?".
 
-Ahora responde a la consulta del usuario: "${message}"
 `;
 
     try {
