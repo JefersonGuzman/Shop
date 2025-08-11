@@ -4,21 +4,18 @@ exports.ProductModel = void 0;
 const mongoose_1 = require("mongoose");
 const productSchema = new mongoose_1.Schema({
     name: { type: String, required: true, trim: true },
-    brand: {
-        type: String,
-        required: true,
-        enum: ['HP', 'Dell', 'Apple', 'Lenovo', 'Asus', 'Samsung'],
-    },
-    category: {
-        type: String,
-        required: true,
-        enum: ['laptop', 'desktop', 'tablet', 'smartphone', 'accessory'],
-    },
+    brand: { type: String, required: true, trim: true },
+    category: { type: String, required: true, trim: true },
     price: { type: Number, required: true, min: 0 },
     stock: { type: Number, required: true, min: 0 },
-    specifications: { type: mongoose_1.Schema.Types.Mixed, required: true },
-    images: [{ type: String }],
-    description: { type: String, required: true },
+    specifications: { type: mongoose_1.Schema.Types.Mixed, required: false, default: {} },
+    images: [
+        new mongoose_1.Schema({
+            url: { type: String, required: true },
+            publicId: { type: String, required: true },
+        }, { _id: false })
+    ],
+    description: { type: String, required: false, default: '' },
     rating: { type: Number, min: 0, max: 5, default: 0 },
     reviews: { type: Number, default: 0 },
     tags: [{ type: String }],

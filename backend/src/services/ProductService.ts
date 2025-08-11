@@ -39,9 +39,17 @@ export class ProductService {
   }
 
   static async createProduct(data: ProductCreateDTO): Promise<ProductDocument> {
+    console.log('🔎 [Products] checking SKU:', data.sku);
     const exists = await ProductModel.findOne({ sku: data.sku });
     if (exists) throw new Error('SKU duplicado');
-    const doc = await ProductModel.create({ ...data, specifications: {}, images: [], description: '' });
+    console.log('📝 [Products] data to save:', JSON.stringify(data));
+    const doc = await ProductModel.create({
+      ...data,
+      specifications: (data as any).specifications ?? {},
+      images: (data as any).images ?? [],
+      description: (data as any).description ?? '',
+    });
+    console.log('✅ [Products] saved id:', doc._id);
     return doc as unknown as ProductDocument;
   }
 

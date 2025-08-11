@@ -21,11 +21,24 @@ exports.ProductQuerySchema = zod_1.z
 });
 exports.ProductCreateSchema = zod_1.z.object({
     name: zod_1.z.string().min(1),
-    brand: zod_1.z.enum(['HP', 'Dell', 'Apple', 'Lenovo', 'Asus', 'Samsung']),
-    category: zod_1.z.enum(['laptop', 'desktop', 'tablet', 'smartphone', 'accessory']),
+    brand: zod_1.z.string().min(1),
+    category: zod_1.z.string().min(1),
     price: zod_1.z.number().min(0),
     stock: zod_1.z.number().min(0),
     sku: zod_1.z.string().min(1),
+    description: zod_1.z.string().optional(),
+    tags: zod_1.z.array(zod_1.z.string()).optional(),
+    images: zod_1.z
+        .array(zod_1.z.union([
+        zod_1.z.string(),
+        zod_1.z.object({ url: zod_1.z.string(), publicId: zod_1.z.string() }),
+    ]))
+        .optional()
+        .transform((arr) => Array.isArray(arr)
+        ? arr.map((item) => typeof item === 'string'
+            ? { url: item, publicId: '' }
+            : item)
+        : arr),
 });
 exports.ProductUpdateSchema = exports.ProductCreateSchema.partial();
 //# sourceMappingURL=product.js.map

@@ -20,11 +20,17 @@ function validateQuery(schema) {
 function validateBody(schema) {
     return (req, res, next) => {
         try {
-            req.body = schema.parse(req.body);
+            const before = JSON.stringify(req.body);
+            const parsed = schema.parse(req.body);
+            const after = JSON.stringify(parsed);
+            console.log('🧪 [Validation] body before:', before);
+            console.log('🧪 [Validation] body after:', after);
+            req.body = parsed;
             next();
         }
         catch (error) {
             if (error instanceof zod_1.z.ZodError) {
+                console.error('⚠️ [Validation] failed:', JSON.stringify(error.errors));
                 return res.status(400).json({ error: 'Validation failed', details: error.errors });
             }
             next(error);

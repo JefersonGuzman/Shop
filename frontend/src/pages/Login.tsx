@@ -21,7 +21,8 @@ export default function Login() {
       // Redirigir según rol
       const me = await axios.get(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${res.data?.accessToken}` } });
       const role = me.data?.user?.role || 'customer';
-      navigate(role === 'admin' ? '/admin' : '/');
+      // Enviar a panel si es admin o employee
+      navigate(role === 'admin' || role === 'employee' ? '/admin' : '/');
     } catch (e: any) {
       setMsg('Credenciales inválidas');
     }

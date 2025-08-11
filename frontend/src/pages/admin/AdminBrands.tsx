@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { AxiosError } from 'axios';
 import { Plus, Search, Edit, Trash2, ChevronUp, ChevronDown, X, LoaderCircle, AlertTriangle, Globe } from 'lucide-react';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -9,8 +9,8 @@ const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:500
 type Brand = {
   _id: string;
   name: string;
-  description?: string;
   logo?: string;
+  description?: string;
   website?: string;
   isActive: boolean;
   createdAt: string;
@@ -19,9 +19,7 @@ type Brand = {
 
 const initialFormState = {
   name: '',
-  description: '',
   logo: '',
-  website: '',
   isActive: true,
 };
 
@@ -31,13 +29,13 @@ function PaginationControls({ page, totalPages, onPageChange }: { page: number, 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
   return (
     <div className="flex items-center justify-center gap-2 mt-4">
-      <button onClick={() => onPageChange(page - 1)} disabled={page <= 1} className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-border bg-surface text-text hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed">‹</button>
+      <button onClick={() => onPageChange(page - 1)} disabled={page <= 1} className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-border bg-surface text-text hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed text-sm">‹</button>
       {pages.map(p => (
-        <button key={p} onClick={() => onPageChange(p)} disabled={p === page} className={`h-9 w-9 inline-flex items-center justify-center rounded-md border border-border ${p === page ? 'bg-primary text-primary-foreground' : 'bg-surface text-text'} hover:bg-black/5 disabled:opacity-100`}>
+        <button key={p} onClick={() => onPageChange(p)} disabled={p === page} className={`h-8 w-8 inline-flex items-center justify-center rounded-md border border-border ${p === page ? 'bg-black text-white' : 'bg-surface text-text'} hover:bg-black/5 disabled:opacity-100 text-sm`}>
           {p}
         </button>
       ))}
-      <button onClick={() => onPageChange(page + 1)} disabled={page >= totalPages} className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-border bg-surface text-text hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed">›</button>
+      <button onClick={() => onPageChange(page + 1)} disabled={page >= totalPages} className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-border bg-surface text-text hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed text-sm">›</button>
     </div>
   );
 }
@@ -109,6 +107,14 @@ export default function AdminBrands() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedLogo, setSelectedLogo] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const resolveUrl = (u?: string | null) => {
+    if (!u) return '';
+    if (u.startsWith('http') || u.startsWith('blob:') || u.startsWith('data:')) return u;
+    // Rutas relativas como /uploads/...
+    return `${API_BASE}${u}`;
+  };
 
   const fetchBrands = useCallback(async () => {
     setLoading(true);
@@ -254,18 +260,21 @@ export default function AdminBrands() {
     }
 
     setSelectedLogo(file);
-    
+
     // Crear URL de preview
     const newPreviewUrl = URL.createObjectURL(file);
     setLogoPreviewUrl(newPreviewUrl);
   };
 
   const removeLogo = () => {
+    // Limpiar archivo seleccionado y vista previa
     setSelectedLogo(null);
     if (logoPreviewUrl) {
       URL.revokeObjectURL(logoPreviewUrl);
       setLogoPreviewUrl(null);
     }
+    // Señalar que se debe quitar el logo actual
+    setForm((prev) => ({ ...prev, logo: '' }));
   };
 
   const clearLogo = () => {
@@ -282,38 +291,36 @@ export default function AdminBrands() {
     setLoading(true);
 
     try {
-      // Crear FormData para enviar logo
-      const formData = new FormData();
-      
-      // Agregar campos del formulario
-      formData.append('name', form.name);
-      formData.append('description', form.description || '');
-      formData.append('website', form.website || '');
-      formData.append('isActive', form.isActive.toString());
-      
-      // Agregar logo si hay archivo seleccionado
-      if (selectedLogo) {
-        formData.append('logo', selectedLogo);
-      } else if (form.logo && !editing) {
-        // Si no hay archivo nuevo pero hay URL existente (solo en creación)
-        formData.append('logo', form.logo);
-      }
+      // Enviar multipart si hay archivo; si no, enviar JSON
+      const hasFile = !!selectedLogo;
+      if (hasFile) {
+        // Subir a Cloudinary usando endpoint de firma
+        const sig = await http.get(`/api/auth/cloudinary-signature`);
+        const { timestamp, signature, apiKey, cloudName, folder } = sig.data;
+        const fd = new FormData();
+        fd.append('file', selectedLogo as Blob);
+        fd.append('api_key', apiKey);
+        fd.append('timestamp', String(timestamp));
+        fd.append('signature', signature);
+        fd.append('folder', folder);
+        const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+        const upRes = await fetch(uploadUrl, { method: 'POST', body: fd });
+        const upJson = await upRes.json();
+        const cloudUrl = upJson.secure_url as string;
 
-      if (editing) {
-        await http.put(`${API_BASE}/api/brands/${editing._id}`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        showToast('Marca actualizada exitosamente.', 'success');
+        const payload = { name: form.name, logo: cloudUrl, isActive: form.isActive } as any;
+        if (editing) await http.put(`${API_BASE}/api/brands/${editing._id}`, payload);
+        else await http.post(`${API_BASE}/api/brands`, payload);
       } else {
-        await http.post(`${API_BASE}/api/brands`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        showToast('Marca creada exitosamente.', 'success');
+        // Si form.logo === '' significa que el usuario pulsó "Remover"
+        const payload = { name: form.name, logo: form.logo, isActive: form.isActive } as any;
+        if (editing) {
+          await http.put(`${API_BASE}/api/brands/${editing._id}`, payload);
+        } else {
+          await http.post(`${API_BASE}/api/brands`, payload);
+        }
       }
+      showToast(editing ? 'Marca actualizada exitosamente.' : 'Marca creada exitosamente.', 'success');
       closeForm();
       fetchBrands();
     } catch (err) {
@@ -354,7 +361,7 @@ export default function AdminBrands() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Gestión de Marcas</h1>
         <button 
-          className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className="h-8 px-3 inline-flex items-center justify-center gap-2 rounded-md bg-black text-white hover:bg-black/90 disabled:opacity-50 text-sm"
           onClick={openCreateForm} 
           disabled={loading}
         >
@@ -429,7 +436,7 @@ export default function AdminBrands() {
                     <span className="text-sm text-mutedText">{error}</span>
                     <button 
                       onClick={fetchBrands}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                      className="h-8 px-3 inline-flex items-center justify-center rounded-md bg-black text-white hover:bg-black/90 text-sm"
                     >
                       Reintentar
                     </button>
@@ -447,7 +454,7 @@ export default function AdminBrands() {
                     <span className="text-sm text-mutedText">Aún no se han creado marcas en el sistema</span>
                     <button 
                       onClick={openCreateForm}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                      className="h-8 px-3 inline-flex items-center justify-center rounded-md bg-black text-white hover:bg-black/90 text-sm"
                     >
                       Crear Primera Marca
                     </button>
@@ -468,7 +475,7 @@ export default function AdminBrands() {
                   <td className="py-2 px-3">
                     {brand.logo ? (
                       <img 
-                        src={brand.logo} 
+                        src={resolveUrl(brand.logo)} 
                         alt={`Logo ${brand.name}`}
                         className="w-12 h-12 object-contain rounded border border-border"
                       />
@@ -576,37 +583,35 @@ export default function AdminBrands() {
                 />
               </div>
 
-              {/* Segunda fila: Descripción */}
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-text mb-2">
-                  Descripción
-                </label>
-                <textarea 
-                  id="description" 
-                  rows={3}
-                  className="w-full px-3 py-3 rounded-lg border border-border bg-surface focus:ring-2 focus:ring-primary focus:border-primary transition-colors resize-none"
-                  value={form.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Describe la marca..."
-                />
-              </div>
+              {/* Eliminado campo Descripción */}
 
-              {/* Tercera fila: Logo */}
+              {/* Logo */}
               <div>
                 <label htmlFor="logo" className="block text-sm font-medium text-text mb-2">
                   Logo
                 </label>
                 <div className="space-y-3">
-                  <input 
-                    type="file" 
-                    id="logo" 
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    id="logo"
                     accept="image/jpeg,image/jpg,image/png,image/webp"
-                    className="w-full px-3 py-2 rounded-lg border border-border bg-surface focus:ring-2 focus:ring-primary focus:border-primary transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
                     onChange={handleLogoUpload}
+                    className="sr-only"
                   />
-                  <p className="text-xs text-mutedText">
-                    Formatos: JPG, PNG, WebP. Máximo 5MB.
-                  </p>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="h-8 px-3 inline-flex items-center justify-center rounded-md bg-black text-white hover:bg-black/90 text-sm"
+                    >
+                      Seleccionar logo
+                    </button>
+                    <span className="text-sm text-mutedText truncate max-w-[240px]">
+                      {selectedLogo?.name || (form.logo ? 'Logo actual seleccionado' : 'Ningún archivo seleccionado')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-mutedText">Formatos: JPG, PNG, WebP. Máximo 5MB.</p>
                   
                   {/* Preview del logo */}
                   {(logoPreviewUrl || form.logo) && (
@@ -616,14 +621,15 @@ export default function AdminBrands() {
                         <button
                           type="button"
                           onClick={removeLogo}
-                          className="text-xs text-red-600 hover:text-red-700"
+                          className="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700"
+                          aria-label="Remover logo"
                         >
                           Remover
                         </button>
                       </div>
                       <div className="flex items-center gap-3">
                         <img 
-                          src={logoPreviewUrl || form.logo} 
+                          src={resolveUrl(logoPreviewUrl || form.logo)} 
                           alt="Preview del logo"
                           className="w-20 h-20 object-contain rounded-lg border border-border"
                         />
@@ -636,36 +642,20 @@ export default function AdminBrands() {
                 </div>
               </div>
 
-              {/* Cuarta fila: Sitio Web y Estado */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="website" className="block text-sm font-medium text-text mb-2">
-                    Sitio Web
-                  </label>
-                  <input 
-                    type="url" 
-                    id="website" 
-                    className="h-11 w-full px-3 rounded-lg border border-border bg-surface focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-                    value={form.website}
-                    onChange={(e) => handleInputChange('website', e.target.value)}
-                    placeholder="https://www.ejemplo.com"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="isActive" className="block text-sm font-medium text-text mb-2">
-                    Estado
-                  </label>
-                  <select 
-                    id="isActive" 
-                    className="h-11 w-full px-3 rounded-lg border border-border bg-surface focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-                    value={form.isActive.toString()}
-                    onChange={(e) => handleInputChange('isActive', e.target.value === 'true')}
-                  >
-                    <option value="true">Activo</option>
-                    <option value="false">Inactivo</option>
-                  </select>
-                </div>
+              {/* Estado */}
+              <div>
+                <label htmlFor="isActive" className="block text-sm font-medium text-text mb-2">
+                  Estado
+                </label>
+                <select 
+                  id="isActive" 
+                  className="h-11 w-full px-3 rounded-lg border border-border bg-surface focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                  value={form.isActive.toString()}
+                  onChange={(e) => handleInputChange('isActive', e.target.value === 'true')}
+                >
+                  <option value="true">Activo</option>
+                  <option value="false">Inactivo</option>
+                </select>
               </div>
 
               {/* Botones de acción */}
@@ -680,7 +670,7 @@ export default function AdminBrands() {
                 </button>
                 <button 
                   type="submit" 
-                  className="h-11 px-6 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-md bg-black text-white hover:bg-black/90 disabled:opacity-50 transition-colors text-sm"
                   disabled={loading}
                 >
                   {loading ? (

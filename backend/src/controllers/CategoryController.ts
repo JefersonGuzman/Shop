@@ -7,24 +7,38 @@ export class CategoryController {
   async list(req: Request, res: Response): Promise<void> {
     try {
       // Parse query parameters
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-      const sortBy = req.query.sortBy as string || 'name';
-      const sortOrder = req.query.sortOrder as string || 'asc';
-      const search = req.query.search as string || '';
+      const { page, limit, sortBy, sortOrder, search } = req.query as {
+        page?: string;
+        limit?: string;
+        sortBy?: string;
+        sortOrder?: string;
+        search?: string;
+      };
+
+      // Validar parámetros requeridos
+      if (!page || !limit) {
+        res.status(400).json({ error: 'Los parámetros page y limit son requeridos' });
+        return;
+      }
+
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const sortByField = sortBy || 'name';
+      const sortOrderField = sortOrder || 'asc';
+      const searchTerm = search || '';
 
       // Build filter
       let filter: any = {};
-      if (search) {
-        filter.name = new RegExp(search, 'i');
+      if (searchTerm) {
+        filter.name = new RegExp(searchTerm, 'i');
       }
 
       // Build sort object
       const sort: any = {};
-      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+      sort[sortByField] = sortOrderField === 'asc' ? 1 : -1;
 
       // Calculate skip for pagination
-      const skip = (page - 1) * limit;
+      const skip = (pageNum - 1) * limitNum;
 
       // Get total count for pagination
       const total = await CategoryModel.countDocuments(filter);
@@ -33,7 +47,7 @@ export class CategoryController {
       let docs = await CategoryModel.find(filter)
         .sort(sort)
         .skip(skip)
-        .limit(limit)
+        .limit(limitNum)
         .lean();
 
       // Fallback: si no hay categorías persistidas, obtenerlas desde productos
@@ -50,9 +64,9 @@ export class CategoryController {
         
         // Update total count for fallback data
         const fallbackTotal = docs.length;
-        const totalPages = Math.ceil(fallbackTotal / limit);
+        const totalPages = Math.ceil(fallbackTotal / limitNum);
         const startIndex = skip;
-        const endIndex = Math.min(startIndex + limit, fallbackTotal);
+        const endIndex = Math.min(startIndex + limitNum, fallbackTotal);
         
         // Apply pagination to fallback data
         docs = docs.slice(startIndex, endIndex);
@@ -61,30 +75,30 @@ export class CategoryController {
           success: true,
           data: docs,
           pagination: {
-            page,
-            limit,
+            page: pageNum,
+            limit: limitNum,
             total: fallbackTotal,
             totalPages,
-            hasNext: page < totalPages,
-            hasPrev: page > 1
+            hasNext: pageNum < totalPages,
+            hasPrev: pageNum > 1
           }
         });
         return;
       }
 
       // Calculate pagination info
-      const totalPages = Math.ceil(total / limit);
+      const totalPages = Math.ceil(total / limitNum);
 
       res.json({
         success: true,
         data: docs,
         pagination: {
-          page,
-          limit,
+          page: pageNum,
+          limit: limitNum,
           total,
           totalPages,
-          hasNext: page < totalPages,
-          hasPrev: page > 1
+          hasNext: pageNum < totalPages,
+          hasPrev: pageNum > 1
         }
       });
     } catch (e: any) {

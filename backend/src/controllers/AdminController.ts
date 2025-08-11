@@ -74,7 +74,7 @@ export class AdminController {
   // ---- Orders (Admin) ----
   async listOrders(req: Request, res: Response): Promise<void> {
     try {
-      const { page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc', q, status, paymentStatus } = req.query as {
+      const { page, limit, sortBy, sortOrder, q, status, paymentStatus } = req.query as {
         page?: string;
         limit?: string;
         sortBy?: string;
@@ -83,6 +83,12 @@ export class AdminController {
         status?: string;
         paymentStatus?: string;
       };
+
+      // Validar parámetros requeridos
+      if (!page || !limit) {
+        res.status(400).json({ error: 'Los parámetros page y limit son requeridos' });
+        return;
+      }
 
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
@@ -103,7 +109,9 @@ export class AdminController {
 
       // Build sort
       const sort: any = {};
-      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+      const sortByField = sortBy || 'createdAt';
+      const sortOrderField = sortOrder || 'desc';
+      sort[sortByField] = sortOrderField === 'asc' ? 1 : -1;
 
       // Get total count
       const total = await OrderModel.countDocuments(filter);

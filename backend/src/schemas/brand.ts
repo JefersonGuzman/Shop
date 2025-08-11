@@ -2,11 +2,17 @@ import { z } from 'zod';
 
 export const BrandCreateSchema = z.object({
   name: z.string().min(1),
-  slug: z.string().min(1),
-  isActive: z.boolean().optional(),
-});
+  slug: z.string().min(1).optional(),
+  logo: z.string().optional(),
+  isActive: z.coerce.boolean().optional(),
+}).strict();
 
-export const BrandUpdateSchema = BrandCreateSchema.partial();
+export const BrandUpdateSchema = z.object({
+  name: z.string().min(1).optional(),
+  slug: z.string().min(1).optional(),
+  logo: z.string().optional(),
+  isActive: z.coerce.boolean().optional(),
+}).strict();
 
 export const BrandQuerySchema = z.object({
   search: z.string().optional(),

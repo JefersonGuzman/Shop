@@ -24,7 +24,7 @@ const chatSessionSchema = new mongoose_1.Schema({
     isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 chatSessionSchema.index({ userId: 1, createdAt: -1 });
-chatSessionSchema.index({ sessionId: 1 });
+// sessionId ya es unique, evita índice duplicado
 chatSessionSchema.index({ isActive: 1 });
 exports.ChatSessionModel = (0, mongoose_1.model)('ChatSession', chatSessionSchema);
 //# sourceMappingURL=ChatSession.js.map

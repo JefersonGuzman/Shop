@@ -25,10 +25,18 @@ class ProductService {
         return { products: products, total };
     }
     static async createProduct(data) {
+        console.log('🔎 [Products] checking SKU:', data.sku);
         const exists = await Product_1.ProductModel.findOne({ sku: data.sku });
         if (exists)
             throw new Error('SKU duplicado');
-        const doc = await Product_1.ProductModel.create({ ...data, specifications: {}, images: [], description: '' });
+        console.log('📝 [Products] data to save:', JSON.stringify(data));
+        const doc = await Product_1.ProductModel.create({
+            ...data,
+            specifications: data.specifications ?? {},
+            images: data.images ?? [],
+            description: data.description ?? '',
+        });
+        console.log('✅ [Products] saved id:', doc._id);
         return doc;
     }
     static async updateProduct(id, data) {

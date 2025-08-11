@@ -35,10 +35,25 @@ export default function Header() {
   };
 
   useEffect(() => {
-    // Solo ejecutar fetchMe si hay un token en localStorage
+    // Intento de restaurar sesión: si no hay accessToken pero hay refreshToken, refrescar
     const token = localStorage.getItem('accessToken');
+    const refresh = localStorage.getItem('refreshToken');
     if (token) {
       fetchMe();
+    } else if (refresh) {
+      fetch(`${(import.meta as any).env.VITE_API_BASE || 'http://localhost:5000'}/api/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: refresh }),
+      })
+        .then(async (r) => {
+          if (!r.ok) throw new Error('refresh failed');
+          const data = await r.json();
+          localStorage.setItem('accessToken', data.accessToken);
+          if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
+          fetchMe();
+        })
+        .catch(() => setRole(null));
     } else {
       setRole(null);
     }

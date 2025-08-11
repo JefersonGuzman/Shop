@@ -13,6 +13,8 @@ import AdminDashboard from './pages/admin/AdminDashboard.tsx'
 import AdminProducts from './pages/admin/AdminProducts.tsx'
 import AdminOffers from './pages/admin/AdminOffers.tsx'
 import AdminUsers from './pages/admin/AdminUsers.tsx'
+import RequireRoles from './components/RequireRoles.tsx'
+import AccessDenied from './pages/AccessDenied.tsx'
 import AdminOrders from './pages/admin/AdminOrders.tsx'
 import AdminCategories from './pages/admin/AdminCategories.tsx'
 import AdminBrands from './pages/admin/AdminBrands.tsx'
@@ -37,10 +39,18 @@ createRoot(document.getElementById('root')!).render(
           <Route index element={<AdminDashboard />} />
           <Route path="products" element={<AdminProducts />} />
           <Route path="offers" element={<AdminOffers />} />
-          <Route path="users" element={<AdminUsers />} />
+          <Route
+            path="users"
+            element={
+              <RequireRoles allowed={['admin']}>
+                <AdminUsers />
+              </RequireRoles>
+            }
+          />
           <Route path="orders" element={<AdminOrders />} />
           <Route path="categories" element={<AdminCategories />} />
           <Route path="brands" element={<AdminBrands />} />
+          <Route path="*" element={<AccessDenied />} />
         </Route>
       </Routes>
     </BrowserRouter>

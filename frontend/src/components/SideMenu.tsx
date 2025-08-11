@@ -21,7 +21,7 @@ export default function SideMenu({ open, onClose, role, onLogout }: Props) {
   useEffect(() => {
     if (!open) return;
     axios
-      .get(`${API_BASE}/api/categories`)
+      .get(`${API_BASE}/api/categories`, { params: { page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' } })
       .then((res) => {
         const items = (res.data?.data || []) as Array<{ name: string }>;
         const cats = Array.from(new Set(items.map((c) => c.name))).sort();

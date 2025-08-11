@@ -7,15 +7,20 @@ class ProductController {
     async getProducts(req, res) {
         try {
             const query = req.query;
+            // Validar parámetros requeridos
+            if (!query.page || !query.limit) {
+                res.status(400).json({ error: 'Los parámetros page y limit son requeridos' });
+                return;
+            }
             const result = await ProductService_1.ProductService.getProducts(query);
             res.json({
                 success: true,
                 data: result.products,
                 pagination: {
-                    page: Number(query.page || 1),
-                    limit: Number(query.limit || 20),
+                    page: Number(query.page),
+                    limit: Number(query.limit),
                     total: result.total,
-                    pages: Math.ceil(result.total / Number(query.limit || 20)),
+                    pages: Math.ceil(result.total / Number(query.limit)),
                 },
             });
         }
@@ -40,12 +45,16 @@ class ProductController {
     }
     async createProduct(req, res) {
         try {
+            console.log('📦 [Products] createProduct body:', JSON.stringify(req.body));
             const payload = product_1.ProductCreateSchema.parse(req.body);
+            console.log('✅ [Products] payload after parse:', JSON.stringify(payload));
             const result = await ProductService_1.ProductService.createProduct(payload);
+            console.log('🗄️ [Products] created:', result?._id);
             res.status(201).json({ success: true, data: result });
         }
         catch (error) {
-            res.status(400).json({ error: error.message || 'Bad request' });
+            console.error('❌ [Products] create error:', error?.message, error?.stack);
+            res.status(400).json({ error: error.message || 'Bad request', details: error?.issues || error });
         }
     }
     async updateProduct(req, res) {

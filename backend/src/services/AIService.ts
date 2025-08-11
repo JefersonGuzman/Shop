@@ -188,7 +188,7 @@ Ahora responde a la consulta del usuario: "${message}"
       throw new Error(`Error de Groq API: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
     const content = data.choices[0]?.message?.content || 'No se pudo generar respuesta';
 
       return {
@@ -231,7 +231,7 @@ Ahora responde a la consulta del usuario: "${message}"
       throw new Error(`Error de OpenAI API: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
     const content = data.choices[0]?.message?.content || 'No se pudo generar respuesta';
 
       return {

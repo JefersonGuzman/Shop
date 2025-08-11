@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authenticateToken = authenticateToken;
 exports.requireAdmin = requireAdmin;
+exports.requireStaff = requireStaff;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 function authenticateToken(req, res, next) {
     const authHeader = req.headers.authorization;
@@ -25,6 +26,15 @@ function authenticateToken(req, res, next) {
 function requireAdmin(req, res, next) {
     if (req.user?.role !== 'admin') {
         res.status(403).json({ error: 'Admin access required' });
+        return;
+    }
+    next();
+}
+// Permite acceso a personal (admin o employee)
+function requireStaff(req, res, next) {
+    const role = req.user?.role;
+    if (role !== 'admin' && role !== 'employee') {
+        res.status(403).json({ error: 'Staff access required' });
         return;
     }
     next();

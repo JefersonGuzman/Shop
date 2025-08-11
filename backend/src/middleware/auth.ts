@@ -38,4 +38,18 @@ export function requireAdmin(
   next();
 }
 
+// Permite acceso a personal (admin o employee)
+export function requireStaff(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void {
+  const role = req.user?.role;
+  if (role !== 'admin' && role !== 'employee') {
+    res.status(403).json({ error: 'Staff access required' });
+    return;
+  }
+  next();
+}
+
 

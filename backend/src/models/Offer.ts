@@ -3,6 +3,7 @@ import { Schema, model, Document, Types } from 'mongoose';
 export interface OfferDocument extends Document {
   title: string;
   description?: string;
+  image?: string;
   discountPercent?: number;
   priceOff?: number;
   productIds: Types.ObjectId[];
@@ -32,6 +33,7 @@ const offerSchema = new Schema<OfferDocument>(
       type: String, 
       trim: true 
     },
+    image: { type: String, trim: true },
     discountPercent: { 
       type: Number, 
       min: 0, 

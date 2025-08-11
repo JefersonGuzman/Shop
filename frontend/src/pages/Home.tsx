@@ -10,7 +10,7 @@ type Product = {
   brand: string;
   category: string;
   price: number;
-  images?: string[];
+  images?: (string | { url: string; publicId?: string })[];
 };
 
 export default function Home() {
@@ -42,6 +42,13 @@ export default function Home() {
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [location.search]);
+
+  function resolveImageUrl(images?: (string | { url: string })[]): string | undefined {
+    if (!images || images.length === 0) return undefined;
+    const first = images[0] as string | { url: string } | undefined;
+    if (!first) return undefined;
+    return typeof first === 'string' ? first : first.url;
+  }
 
   return (
     <div className="px-4 md:px-6 lg:px-8 xl:px-0 max-w-[1280px] mx-auto py-6 text-text">
@@ -100,7 +107,7 @@ export default function Home() {
               <div key={p._id} className="bg-surface border border-border rounded-xl overflow-hidden shadow-card hover:shadow-lg transition-shadow">
             <div
               className="aspect-[4/3] bg-cover bg-center"
-              style={{ backgroundImage: `url(${p.images?.[0] || 'https://images.unsplash.com/photo-1518779578993-ec3579fee39f?q=80&w=1200&auto=format&fit=crop'})` }}
+              style={{ backgroundImage: `url(${resolveImageUrl(p.images) || 'https://images.unsplash.com/photo-1518779578993-ec3579fee39f?q=80&w=1200&auto=format&fit=crop'})` }}
             />
             <div className="p-3">
               <p className="text-sm text-mutedText capitalize">{p.category}</p>

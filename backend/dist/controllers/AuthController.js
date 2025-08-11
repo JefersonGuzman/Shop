@@ -35,6 +35,24 @@ class AuthController {
         }
         res.json({ success: true, user: req.user });
     }
+    async refresh(req, res) {
+        try {
+            const { refreshToken } = req.body;
+            if (!refreshToken) {
+                res.status(400).json({ error: 'Refresh token requerido' });
+                return;
+            }
+            const tokens = await AuthService_1.AuthService.refresh(refreshToken);
+            res.json({ success: true, ...tokens });
+        }
+        catch (error) {
+            res.status(401).json({ error: error.message || 'Refresh inválido' });
+        }
+    }
+    async logout(req, res) {
+        await AuthService_1.AuthService.logout();
+        res.json({ success: true });
+    }
 }
 exports.AuthController = AuthController;
 //# sourceMappingURL=AuthController.js.map

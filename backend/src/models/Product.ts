@@ -1,5 +1,10 @@
 import { Schema, model, Document } from 'mongoose';
 
+export interface ProductImage {
+  url: string;
+  publicId: string;
+}
+
 export interface ProductDocument extends Document {
   name: string;
   brand: string;
@@ -7,7 +12,7 @@ export interface ProductDocument extends Document {
   price: number;
   stock: number;
   specifications: Record<string, unknown>;
-  images: string[];
+  images: ProductImage[];
   description: string;
   rating: number;
   reviews: number;
@@ -23,9 +28,14 @@ const productSchema = new Schema<ProductDocument>(
     category: { type: String, required: true, trim: true },
     price: { type: Number, required: true, min: 0 },
     stock: { type: Number, required: true, min: 0 },
-    specifications: { type: Schema.Types.Mixed, required: true },
-    images: [{ type: String }],
-    description: { type: String, required: true },
+    specifications: { type: Schema.Types.Mixed, required: false, default: {} },
+    images: [
+      new Schema<ProductImage>({
+        url: { type: String, required: true },
+        publicId: { type: String, required: true },
+      }, { _id: false })
+    ],
+    description: { type: String, required: false, default: '' },
     rating: { type: Number, min: 0, max: 5, default: 0 },
     reviews: { type: Number, default: 0 },
     tags: [{ type: String }],

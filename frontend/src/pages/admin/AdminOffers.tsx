@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AxiosError } from 'axios';
 import { Plus, Search, Edit, Trash2, ChevronUp, ChevronDown, X, LoaderCircle, AlertTriangle, Percent, Tag, DollarSign } from 'lucide-react';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -10,6 +10,7 @@ type Offer = {
   _id: string;
   title: string;
   description?: string;
+  image?: string;
   discountPercent?: number;
   priceOff?: number;
   productIds: string[];
@@ -22,6 +23,7 @@ type Offer = {
 const initialFormState = {
   title: '',
   description: '',
+  image: '',
   discountPercent: 10,
   priceOff: undefined,
   productIds: [],
@@ -130,6 +132,9 @@ export default function AdminOffers() {
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   
   const debouncedSearch = useDebounce(filters.search, 500);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   const fetchOffers = useCallback(async () => {
     setLoading(true);
@@ -203,6 +208,7 @@ export default function AdminOffers() {
     setForm({
       title: offer.title,
       description: offer.description || '',
+      image: offer.image || '',
       discountPercent: offer.discountPercent,
       priceOff: offer.priceOff,
       productIds: offer.productIds || [],
@@ -220,17 +226,51 @@ export default function AdminOffers() {
     setFormError(null);
   };
 
+  const resolveUrl = (u?: string | null) => {
+    if (!u) return '';
+    if (u.startsWith('http') || u.startsWith('blob:') || u.startsWith('data:')) return u;
+    return `${API_BASE}${u}`;
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) return;
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) return;
+    setSelectedImage(file);
+    setImagePreviewUrl(URL.createObjectURL(file));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
     setLoading(true);
 
     try {
+      let imageUrl = form.image || '';
+      if (selectedImage) {
+        const sig = await http.get(`/api/auth/cloudinary-signature`, { params: { folder: 'makers-tech/offers' } });
+        const { timestamp, signature, apiKey, cloudName, folder } = sig.data;
+        const fd = new FormData();
+        fd.append('file', selectedImage as Blob);
+        fd.append('api_key', apiKey);
+        fd.append('timestamp', String(timestamp));
+        fd.append('signature', signature);
+        fd.append('folder', folder);
+        const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+        const upRes = await fetch(uploadUrl, { method: 'POST', body: fd });
+        const upJson = await upRes.json();
+        if (upJson.error) throw new Error(upJson.error?.message || 'Error al subir imagen');
+        imageUrl = upJson.secure_url as string;
+      }
+      const payload = { ...form, image: imageUrl } as any;
       if (editing) {
-        await http.put(`${API_BASE}/api/offers/${editing._id}`, form);
+        await http.put(`${API_BASE}/api/offers/${editing._id}`, payload);
         showToast('Oferta actualizada exitosamente.', 'success');
       } else {
-        await http.post(`${API_BASE}/api/offers`, form);
+        await http.post(`${API_BASE}/api/offers`, payload);
         showToast('Oferta creada exitosamente.', 'success');
       }
       closeForm();
@@ -273,7 +313,7 @@ export default function AdminOffers() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Gestión de Ofertas</h1>
         <button 
-          className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className="h-8 px-3 inline-flex items-center justify-center gap-2 rounded-md bg-black text-white hover:bg-black/90 disabled:opacity-50 text-sm"
           onClick={openCreateForm} 
           disabled={loading}
         >
@@ -337,7 +377,7 @@ export default function AdminOffers() {
                     <span className="text-sm text-mutedText">{error}</span>
                     <button 
                       onClick={fetchOffers}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                      className="h-8 px-3 inline-flex items-center justify-center rounded-md bg-black text-white hover:bg-black/90 text-sm"
                     >
                       Reintentar
                     </button>
@@ -355,7 +395,7 @@ export default function AdminOffers() {
                     <span className="text-sm text-mutedText">Aún no se han creado ofertas en el sistema</span>
                     <button 
                       onClick={openCreateForm}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                      className="h-8 px-3 inline-flex items-center justify-center rounded-md bg-black text-white hover:bg-black/90 text-sm"
                     >
                       Crear Primera Oferta
                     </button>
@@ -453,6 +493,25 @@ export default function AdminOffers() {
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Describe los detalles de la oferta..."
                 />
+              </div>
+
+              {/* Imagen de la oferta */}
+              <div>
+                <label className="block text-sm font-medium text-text mb-2">Imagen</label>
+                <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="sr-only" />
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => imageInputRef.current?.click()} className="h-8 px-3 inline-flex items-center justify-center rounded-md bg-black text-white hover:bg-black/90 text-sm">
+                    Seleccionar imagen
+                  </button>
+                  <span className="text-sm text-mutedText truncate max-w-[240px]">
+                    {selectedImage?.name || (form.image ? 'Imagen actual seleccionada' : 'Ningún archivo seleccionado')}
+                  </span>
+                </div>
+                {(imagePreviewUrl || form.image) && (
+                  <div className="mt-2">
+                    <img src={resolveUrl(imagePreviewUrl || form.image)} className="w-32 h-32 object-contain border border-border rounded" />
+                  </div>
+                )}
               </div>
 
               {/* Tercera fila: Descuento */}
@@ -578,7 +637,7 @@ export default function AdminOffers() {
                 </button>
                 <button 
                   type="submit" 
-                  className="h-11 px-6 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-md bg-black text-white hover:bg-black/90 disabled:opacity-50 transition-colors text-sm"
                   disabled={loading}
                 >
                   {loading ? (

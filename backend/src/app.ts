@@ -1,6 +1,7 @@
 import compression from 'compression';
 import cors from 'cors';
 import express, { Application, Request, Response } from 'express';
+import path from 'path';
 import helmet from 'helmet';
 
 import authRouter from './routes/auth';
@@ -19,6 +20,8 @@ export function createApp(): Application {
   app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
   app.use(compression());
   app.use(express.json({ limit: '1mb' }));
+  // Archivos estáticos subidos (siempre desde backend/uploads)
+  app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')));
 
   // Health check minimal
   app.get('/health', (_req: Request, res: Response) => {

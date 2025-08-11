@@ -7,11 +7,10 @@ const userSchema = new mongoose_1.Schema({
     password: { type: String, required: true, minlength: 6 },
     firstName: { type: String, required: true, trim: true },
     lastName: { type: String, required: true, trim: true },
-    role: { type: String, enum: ['admin', 'customer'], default: 'customer' },
+    role: { type: String, enum: ['admin', 'employee', 'customer'], default: 'customer' },
     isActive: { type: Boolean, default: true },
     lastLogin: { type: Date },
 }, { timestamps: true });
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
 exports.UserModel = (0, mongoose_1.model)('User', userSchema);

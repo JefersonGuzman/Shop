@@ -3,6 +3,7 @@ import { z } from 'zod';
 const OfferBaseSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
+  image: z.string().optional(),
   discountPercent: z.number().min(0).max(100).optional(),
   priceOff: z.number().min(0).optional(),
   productIds: z.array(z.string().min(1)),

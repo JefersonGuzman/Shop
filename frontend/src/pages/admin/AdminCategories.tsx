@@ -29,13 +29,13 @@ function PaginationControls({ page, totalPages, onPageChange }: { page: number, 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
   return (
     <div className="flex items-center justify-center gap-2 mt-4">
-      <button onClick={() => onPageChange(page - 1)} disabled={page <= 1} className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-border bg-surface text-text hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed">‹</button>
+      <button onClick={() => onPageChange(page - 1)} disabled={page <= 1} className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-border bg-surface text-text hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed text-sm">‹</button>
       {pages.map(p => (
-        <button key={p} onClick={() => onPageChange(p)} disabled={p === page} className={`h-9 w-9 inline-flex items-center justify-center rounded-md border border-border ${p === page ? 'bg-primary text-primary-foreground' : 'bg-surface text-text'} hover:bg-black/5 disabled:opacity-100`}>
+        <button key={p} onClick={() => onPageChange(p)} disabled={p === page} className={`h-8 w-8 inline-flex items-center justify-center rounded-md border border-border ${p === page ? 'bg-black text-white' : 'bg-surface text-text'} hover:bg-black/5 disabled:opacity-100 text-sm`}>
           {p}
         </button>
       ))}
-      <button onClick={() => onPageChange(page + 1)} disabled={page >= totalPages} className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-border bg-surface text-text hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed">›</button>
+      <button onClick={() => onPageChange(page + 1)} disabled={page >= totalPages} className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-border bg-surface text-text hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed text-sm">›</button>
     </div>
   );
 }
@@ -274,7 +274,7 @@ export default function AdminCategories() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Gestión de Categorías</h1>
         <button 
-          className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className="h-8 px-3 inline-flex items-center justify-center gap-2 rounded-md bg-black text-white hover:bg-black/90 disabled:opacity-50 text-sm"
           onClick={openCreateForm} 
           disabled={loading}
         >
@@ -349,7 +349,7 @@ export default function AdminCategories() {
                     <span className="text-sm text-mutedText">{error}</span>
                     <button 
                       onClick={fetchCategories}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                      className="h-8 px-3 inline-flex items-center justify-center rounded-md bg-black text-white hover:bg-black/90 text-sm"
                     >
                       Reintentar
                     </button>
@@ -367,7 +367,7 @@ export default function AdminCategories() {
                     <span className="text-sm text-mutedText">Aún no se han creado categorías en el sistema</span>
                     <button 
                       onClick={openCreateForm}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                      className="h-8 px-3 inline-flex items-center justify-center rounded-md bg-black text-white hover:bg-black/90 text-sm"
                     >
                       Crear Primera Categoría
                     </button>
@@ -566,7 +566,7 @@ export default function AdminCategories() {
                 </button>
                 <button 
                   type="submit" 
-                  className="h-11 px-6 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-md bg-black text-white hover:bg-black/90 disabled:opacity-50 transition-colors text-sm"
                   disabled={loading}
                 >
                   {loading ? (

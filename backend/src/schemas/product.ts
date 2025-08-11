@@ -27,6 +27,25 @@ export const ProductCreateSchema = z.object({
   price: z.number().min(0),
   stock: z.number().min(0),
   sku: z.string().min(1),
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  images: z
+    .array(
+      z.union([
+        z.string(),
+        z.object({ url: z.string(), publicId: z.string() }),
+      ])
+    )
+    .optional()
+    .transform((arr) =>
+      Array.isArray(arr)
+        ? arr.map((item) =>
+            typeof item === 'string'
+              ? { url: item, publicId: '' }
+              : item
+          )
+        : arr
+    ),
 });
 
 export const ProductUpdateSchema = ProductCreateSchema.partial();

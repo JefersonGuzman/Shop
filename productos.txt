@@ -1,233 +1,132 @@
-3. Producto: iPad Air (2025)
-
-Nombre del Producto: iPad Air (2025)
-
-Marca: Apple
-
-Categoría: Tablet
-
-SKU: (Se puede generar uno) Ej: APPLE-IPAD-AIR-2025-WIFI-128GB
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Tablet iPad Air de Apple, modelo 2025. Cuenta con 128GB de almacenamiento, conectividad WiFi y un vibrante color rosa. Es un dispositivo perfecto para la creatividad, el entretenimiento y la productividad gracias a su rendimiento superior.
-
-Tags: apple, ipad, ipad air, tablet, 128gb, wifi, rosa, 2025
-
-4. Producto: Auriculares Inalámbricos Genéricos
-
-Nombre del Producto: Auriculares Inalámbricos
-
-Marca: (No especificada)
-
-Categoría: Auriculares
-
-SKU: (Se puede generar uno) Ej: 500X500-AURICULARES-INALAMBRICOS
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Auriculares inalámbricos compactos y ligeros, ideales para disfrutar de la música sin cables. Su diseño incluye un estuche de carga para mayor comodidad y autonomía.
-
-Tags: auriculares, inalambricos, bluetooth, audio, compactos
-
-5. Producto: Huawei Watch GT 3 Pro
-
-Nombre del Producto: Huawei Watch GT 3 Pro
-
-Marca: Huawei
-
-Categoría: Smartwatch
-
-SKU: (Se puede generar uno) Ej: HUAWEI-WATCH-GT-3-PRO-16GB-NEGRO
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Smartwatch Huawei Watch GT 3 Pro. Dispone de 16GB de almacenamiento y un elegante diseño en color negro. Es ideal para el monitoreo de la salud y el seguimiento de actividades físicas.
-
-Tags: huawei, smartwatch, watch gt, deporte, salud, negro, 16gb
-
-6. Producto: Xiaomi Redmi Note 14 Pro
-
-Nombre del Producto: Xiaomi Redmi Note 14 Pro
-
-Marca: Xiaomi
-
-Categoría: Smartphone
-
-SKU: (Se puede generar uno) Ej: XIAOMI-REDMI-NOTE-14-4G-NEGRO
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Smartphone Xiaomi Redmi Note 14 Pro con conectividad 4G, 8GB de RAM y 256GB de almacenamiento. Su diseño es moderno y viene en un sofisticado color negro medianoche.
-
-Tags: xiaomi, redmi, smartphone, movil, 4g, 8gb, 256gb, negro
-
-7. Producto: Auriculares Xiaomi Redmi Buds 5 Active
-
-Nombre del Producto: Xiaomi Redmi Buds 5 Active
-
-Marca: Xiaomi
-
-Categoría: Auriculares
-
-SKU: (Se puede generar uno) Ej: XIAOMI-REDMI-BUDS-5-ACTIVE-BLANCOS
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Auriculares inalámbricos Xiaomi Redmi Buds 5 Active con conexión Bluetooth, diseñados en un elegante color blanco. Son perfectos para el día a día y para un estilo de vida activo, ofreciendo gran comodidad y calidad de sonido.
-
-Tags: xiaomi, auriculares, bluetooth, inalambricos, active, blancos
-
-8. Producto: Auriculares Apple AirPods Pro 2
-
-Nombre del Producto: Apple AirPods Pro 2
-
-Marca: Apple
-
-Categoría: Auriculares
-
-SKU: (Se puede generar uno) Ej: APPLE-AIRPODS-PRO-2
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Auriculares inalámbricos Apple AirPods Pro 2, con tecnología de cancelación de ruido y un estuche de carga inteligente. Su diseño minimalista y en color blanco los hace muy reconocibles y su integración con el ecosistema Apple es perfecta.
-
-Tags: apple, airpods, pro, auriculares, inalambricos, bluetooth, cancelacion de ruido, blancos
-
-9. Producto: Auriculares Logitech G435 Lightspeed
-
-Nombre del Producto: Logitech G435 Lightspeed
-
-Marca: Logitech
-
-Categoría: Auriculares Gaming
-
-SKU: (Se puede generar uno) Ej: LOGITECH-G435-LIGHTSPEED-BLANCO
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Auriculares gaming inalámbricos Logitech G435 Lightspeed. Son ultraligeros, con sonido de alta fidelidad y un micrófono integrado. Su diseño en color azul y blanco es moderno y llamativo, ideal para largas sesiones de juego.
-
-Tags: logitech, gaming, auriculares, lightspeed, inalambricos, bluetooth, microfono, blancos, g435
-
-10. Producto: Auriculares Forgeon Gorgon
-
-Nombre del Producto: Forgeon Gorgon RGB
-
-Marca: Forgeon
-
-Categoría: Auriculares Gaming
-
-SKU: (Se puede generar uno) Ej: FORGEON-GORGON-RGB-NEGRO
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Auriculares gaming inalámbricos Forgeon Gorgon RGB. Cuentan con micrófono integrado y un diseño en color negro con iluminación RGB, ofreciendo una experiencia inmersiva y un estilo único para los gamers.
-
-Tags: forgeon, gorgon, gaming, auriculares, rgb, microfono, inalambricos, negros
-
-11. Producto: Auriculares Xiaomi Type-C
-
-Nombre del Producto: Xiaomi Type-C Earphones
-
-Marca: Xiaomi
-
-Categoría: Auriculares
-
-SKU: (Se puede generar uno) Ej: XIAOMI-AURICULARES-TYPE-C-BLANCO
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Auriculares con cable Xiaomi, con conector USB Tipo-C. Son la solución perfecta para dispositivos que carecen de una salida de audio de 3.5 mm. Su diseño es simple y elegante en color blanco.
-
-Tags: xiaomi, auriculares, cable, type-c, usb-c, blancos, audio
-
-12. Producto: Auriculares Poco Essential Twins
-
-Nombre del Producto: Poco Essential Twins
-
-Marca: Poco
-
-Categoría: Auriculares
-
-SKU: (Se puede generar uno) Ej: POCO-ESSENTIAL-TWINS-BLANCO
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Auriculares inalámbricos Bluetooth Poco Essential Twins, que incorporan cancelación de ruido ambiental. Su diseño en color blanco es moderno y funcional, ideal para disfrutar de la música sin interrupciones.
-
-Tags: poco, auriculares, bluetooth, inalambricos, cancelacion de ruido, blancos
-
-13. Producto: Lenovo Ideapad Slim 3 Gen 8
-
-Nombre del Producto: Lenovo Ideapad Slim 3 Gen 8
-
-Marca: Lenovo
-
-Categoría: Portátil/Laptop
-
-SKU: (Se puede generar uno) Ej: LENOVO-IDEAPAD-SLIM-3-I7-16GB
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Portátil Lenovo Ideapad Slim 3 Gen 8, con un procesador Intel Core i7, 16GB de RAM y 1TB de almacenamiento SSD. Su pantalla de 15.6 pulgadas lo convierte en una excelente opción para la productividad y el entretenimiento, ofreciendo un rendimiento rápido y fiable.
-
-Tags: lenovo, ideapad, slim, portatil, laptop, i7, 16gb, 1tb, ssd, 15.6
-
-14. Producto: Portátil HP 15 f6000ns
-
-Nombre del Producto: HP 15 f6000ns
-
-Marca: HP
-
-Categoría: Portátil/Laptop
-
-SKU: (Se puede generar uno) Ej: HP-15-I5-16GB-32GB-SSD
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Portátil HP 15 f6000ns con procesador Intel Core i5, 16GB de RAM y un SSD de 32GB (probablemente un error tipográfico, podría ser 512GB o 1TB). Su pantalla de 15.6 pulgadas es ideal para trabajar o estudiar, y su diseño en color azul cielo es muy elegante.
-
-Tags: hp, portatil, laptop, i5, 16gb, 32gb, ssd, azul, 15.6
-
-15. Producto: Portátil MSI Katana A15
-
-Nombre del Producto: MSI Katana A15 AI B8V 65LES
-
-Marca: MSI
-
-Categoría: Portátil Gaming
-
-SKU: (Se puede generar uno) Ej: MSI-KATANA-A15-R7-16GB-RTX4080
-
-Precio: (No disponible)
-
-Stock: (No disponible)
-
-Descripción: Potente portátil gaming MSI Katana A15. Cuenta con un procesador AMD Ryzen 7, 16GB de RAM y un SSD de 1TB, además de una tarjeta gráfica NVIDIA GeForce RTX 4080. Es un equipo de alto rendimiento, perfecto para los jugadores más exigentes.
-
-Tags: msi, katana, gaming, portatil, laptop, amd, ryzen 7, 16gb, 1tb, ssd, rtx 4080
+[
+  {
+    "nombre": "iPad Air (2025)",
+    "marca": "Apple",
+    "categoria": "Tablet",
+    "sku": "APPLE-IPAD-AIR-2025-WIFI-128GB",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Tablet iPad Air de Apple, modelo 2025. Cuenta con 128GB de almacenamiento, conectividad WiFi y un vibrante color rosa. Es un dispositivo perfecto para la creatividad, el entretenimiento y la productividad gracias a su rendimiento superior.",
+    "tags": ["apple", "ipad", "ipad air", "tablet", "128gb", "wifi", "rosa", "2025"]
+  },
+  {
+    "nombre": "Auriculares Inalámbricos",
+    "marca": null,
+    "categoria": "Auriculares",
+    "sku": "500X500-AURICULARES-INALAMBRICOS",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Auriculares inalámbricos compactos y ligeros, ideales para disfrutar de la música sin cables. Su diseño incluye un estuche de carga para mayor comodidad y autonomía.",
+    "tags": ["auriculares", "inalambricos", "bluetooth", "audio", "compactos"]
+  },
+  {
+    "nombre": "Huawei Watch GT 3 Pro",
+    "marca": "Huawei",
+    "categoria": "Smartwatch",
+    "sku": "HUAWEI-WATCH-GT-3-PRO-16GB-NEGRO",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Smartwatch Huawei Watch GT 3 Pro. Dispone de 16GB de almacenamiento y un elegante diseño en color negro. Es ideal para el monitoreo de la salud y el seguimiento de actividades físicas.",
+    "tags": ["huawei", "smartwatch", "watch gt", "deporte", "salud", "negro", "16gb"]
+  },
+  {
+    "nombre": "Xiaomi Redmi Note 14 Pro",
+    "marca": "Xiaomi",
+    "categoria": "Smartphone",
+    "sku": "XIAOMI-REDMI-NOTE-14-4G-NEGRO",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Smartphone Xiaomi Redmi Note 14 Pro con conectividad 4G, 8GB de RAM y 256GB de almacenamiento. Su diseño es moderno y viene en un sofisticado color negro medianoche.",
+    "tags": ["xiaomi", "redmi", "smartphone", "movil", "4g", "8gb", "256gb", "negro"]
+  },
+  {
+    "nombre": "Xiaomi Redmi Buds 5 Active",
+    "marca": "Xiaomi",
+    "categoria": "Auriculares",
+    "sku": "XIAOMI-REDMI-BUDS-5-ACTIVE-BLANCOS",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Auriculares inalámbricos Xiaomi Redmi Buds 5 Active con conexión Bluetooth, diseñados en un elegante color blanco. Son perfectos para el día a día y para un estilo de vida activo, ofreciendo gran comodidad y calidad de sonido.",
+    "tags": ["xiaomi", "auriculares", "bluetooth", "inalambricos", "active", "blancos"]
+  },
+  {
+    "nombre": "Apple AirPods Pro 2",
+    "marca": "Apple",
+    "categoria": "Auriculares",
+    "sku": "APPLE-AIRPODS-PRO-2",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Auriculares inalámbricos Apple AirPods Pro 2, con tecnología de cancelación de ruido y un estuche de carga inteligente. Su diseño minimalista y en color blanco los hace muy reconocibles y su integración con el ecosistema Apple es perfecta.",
+    "tags": ["apple", "airpods", "pro", "auriculares", "inalambricos", "bluetooth", "cancelacion de ruido", "blancos"]
+  },
+  {
+    "nombre": "Logitech G435 Lightspeed",
+    "marca": "Logitech",
+    "categoria": "Auriculares Gaming",
+    "sku": "LOGITECH-G435-LIGHTSPEED-BLANCO",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Auriculares gaming inalámbricos Logitech G435 Lightspeed. Son ultraligeros, con sonido de alta fidelidad y un micrófono integrado. Su diseño en color azul y blanco es moderno y llamativo, ideal para largas sesiones de juego.",
+    "tags": ["logitech", "gaming", "auriculares", "lightspeed", "inalambricos", "bluetooth", "microfono", "blancos", "g435"]
+  },
+  {
+    "nombre": "Forgeon Gorgon RGB",
+    "marca": "Forgeon",
+    "categoria": "Auriculares Gaming",
+    "sku": "FORGEON-GORGON-RGB-NEGRO",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Auriculares gaming inalámbricos Forgeon Gorgon RGB. Cuentan con micrófono integrado y un diseño en color negro con iluminación RGB, ofreciendo una experiencia inmersiva y un estilo único para los gamers.",
+    "tags": ["forgeon", "gorgon", "gaming", "auriculares", "rgb", "microfono", "inalambricos", "negros"]
+  },
+  {
+    "nombre": "Xiaomi Type-C Earphones",
+    "marca": "Xiaomi",
+    "categoria": "Auriculares",
+    "sku": "XIAOMI-AURICULARES-TYPE-C-BLANCO",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Auriculares con cable Xiaomi, con conector USB Tipo-C. Son la solución perfecta para dispositivos que carecen de una salida de audio de 3.5 mm. Su diseño es simple y elegante en color blanco.",
+    "tags": ["xiaomi", "auriculares", "cable", "type-c", "usb-c", "blancos", "audio"]
+  },
+  {
+    "nombre": "Poco Essential Twins",
+    "marca": "Poco",
+    "categoria": "Auriculares",
+    "sku": "POCO-ESSENTIAL-TWINS-BLANCO",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Auriculares inalámbricos Bluetooth Poco Essential Twins, que incorporan cancelación de ruido ambiental. Su diseño en color blanco es moderno y funcional, ideal para disfrutar de la música sin interrupciones.",
+    "tags": ["poco", "auriculares", "bluetooth", "inalambricos", "cancelacion de ruido", "blancos"]
+  },
+  {
+    "nombre": "Lenovo Ideapad Slim 3 Gen 8",
+    "marca": "Lenovo",
+    "categoria": "Portátil/Laptop",
+    "sku": "LENOVO-IDEAPAD-SLIM-3-I7-16GB",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Portátil Lenovo Ideapad Slim 3 Gen 8, con un procesador Intel Core i7, 16GB de RAM y 1TB de almacenamiento SSD. Su pantalla de 15.6 pulgadas lo convierte en una excelente opción para la productividad y el entretenimiento, ofreciendo un rendimiento rápido y fiable.",
+    "tags": ["lenovo", "ideapad", "slim", "portatil", "laptop", "i7", "16gb", "1tb", "ssd", "15.6"]
+  },
+  {
+    "nombre": "HP 15 f6000ns",
+    "marca": "HP",
+    "categoria": "Portátil/Laptop",
+    "sku": "HP-15-I5-16GB-32GB-SSD",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Portátil HP 15 f6000ns con procesador Intel Core i5, 16GB de RAM y un SSD de 32GB (posible error tipográfico). Su pantalla de 15.6 pulgadas es ideal para trabajar o estudiar, y su diseño en color azul cielo es muy elegante.",
+    "tags": ["hp", "portatil", "laptop", "i5", "16gb", "32gb", "ssd", "azul", "15.6"]
+  },
+  {
+    "nombre": "MSI Katana A15 AI B8V 65LES",
+    "marca": "MSI",
+    "categoria": "Portátil Gaming",
+    "sku": "MSI-KATANA-A15-R7-16GB-RTX4080",
+    "precio": null,
+    "stock": null,
+    "descripcion": "Potente portátil gaming MSI Katana A15. Cuenta con un procesador AMD Ryzen 7, 16GB de RAM y un SSD de 1TB, además de una tarjeta gráfica NVIDIA GeForce RTX 4080. Es un equipo de alto rendimiento, perfecto para los jugadores más exigentes.",
+    "tags": ["msi", "katana", "gaming", "portatil", "laptop", "amd", "ryzen 7", "16gb", "1tb", "ssd", "rtx 4080"]
+  }
+]

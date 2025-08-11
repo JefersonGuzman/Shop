@@ -18,11 +18,31 @@ http.interceptors.request.use((config) => {
 let isRefreshing = false;
 let pending: Array<() => void> = [];
 
+function redirectToLogin() {
+  try {
+    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.replace(`/login?next=${next}`);
+  } catch {
+    window.location.href = '/login';
+  }
+}
+
 http.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
-    if (error.response?.status === 401 && !original._retry) {
+    const status = error.response?.status;
+    const isRefreshEndpoint = typeof original?.url === 'string' && original.url.includes('/api/auth/refresh');
+
+    // Si el token es inválido (403) o estamos en refresh fallido, limpiar y redirigir
+    if (status === 403 || (status === 401 && isRefreshEndpoint)) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      redirectToLogin();
+      throw error;
+    }
+
+    if (status === 401 && !original._retry) {
       original._retry = true;
       if (isRefreshing) {
         await new Promise<void>((resolve) => pending.push(resolve));
@@ -30,7 +50,9 @@ http.interceptors.response.use(
       try {
         isRefreshing = true;
         const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) throw new Error('No refresh token');
+        if (!refreshToken) {
+          throw new Error('No refresh token');
+        }
         const res = await axios.post(`${API_BASE}/api/auth/refresh`, { refreshToken });
         const { accessToken, refreshToken: newRefresh } = res.data;
         localStorage.setItem('accessToken', accessToken);
@@ -42,6 +64,7 @@ http.interceptors.response.use(
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         pending = [];
+        redirectToLogin();
         throw e;
       } finally {
         isRefreshing = false;

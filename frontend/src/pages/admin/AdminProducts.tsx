@@ -1,10 +1,12 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { AxiosError } from 'axios';
 import { Plus, Edit, Trash2, LoaderCircle, ChevronUp, ChevronDown, Search, AlertTriangle, X, Package } from 'lucide-react';
 import { useDebounce } from '../../hooks/useDebounce';
 import { http } from '../../lib/http';
 
 const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:5000';
+
+type ProductImage = { url: string; publicId: string };
 
 type Product = {
   _id: string;
@@ -15,7 +17,7 @@ type Product = {
   stock: number;
   sku: string;
   description?: string;
-  images?: string[];
+  images?: ProductImage[];
   specifications?: Record<string, any>;
   tags?: string[];
 };
@@ -28,7 +30,7 @@ const initialFormState = {
   stock: 0,
   sku: '',
   description: '',
-  images: [],
+  images: [] as ProductImage[],
   specifications: {},
   tags: [],
 };
@@ -39,13 +41,13 @@ function PaginationControls({ page, totalPages, onPageChange }: { page: number, 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
   return (
     <div className="flex items-center justify-center gap-2 mt-4">
-      <button onClick={() => onPageChange(page - 1)} disabled={page <= 1} className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-border bg-surface text-text hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed">‹</button>
+      <button onClick={() => onPageChange(page - 1)} disabled={page <= 1} className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-border bg-surface text-text hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed text-sm">‹</button>
       {pages.map(p => (
-        <button key={p} onClick={() => onPageChange(p)} disabled={p === page} className={`h-9 w-9 inline-flex items-center justify-center rounded-md border border-border ${p === page ? 'bg-primary text-primary-foreground' : 'bg-surface text-text'} hover:bg-black/5 disabled:opacity-100`}>
+        <button key={p} onClick={() => onPageChange(p)} disabled={p === page} className={`h-8 w-8 inline-flex items-center justify-center rounded-md border border-border ${p === page ? 'bg-black text-white' : 'bg-surface text-text'} hover:bg-black/5 disabled:opacity-100 text-sm`}>
           {p}
         </button>
       ))}
-      <button onClick={() => onPageChange(page + 1)} disabled={page >= totalPages} className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-border bg-surface text-text hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed">›</button>
+      <button onClick={() => onPageChange(page + 1)} disabled={page >= totalPages} className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-border bg-surface text-text hover:bg-black/5 disabled:opacity-50 disabled:cursor-not-allowed text-sm">›</button>
     </div>
   );
 }
@@ -121,6 +123,7 @@ export default function AdminProducts() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const imagesInputRef = useRef<HTMLInputElement | null>(null);
   const [brands, setBrands] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
 
@@ -158,11 +161,11 @@ export default function AdminProducts() {
     (async () => {
       try {
         const [brandsRes, catsRes] = await Promise.all([
-          http.get(`${API_BASE}/api/brands`),
-          http.get(`${API_BASE}/api/categories`),
+          http.get(`${API_BASE}/api/brands`, { params: { page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' } }),
+          http.get(`${API_BASE}/api/categories`, { params: { page: 1, limit: 100, sortBy: 'name', sortOrder: 'asc' } }),
         ]);
-        const bs = Array.from(new Set((brandsRes.data?.data || []).map((b: any) => b.name))).sort();
-        const cs = Array.from(new Set((catsRes.data?.data || []).map((c: any) => c.name))).sort();
+        const bs: string[] = Array.from(new Set<string>((brandsRes.data?.data || []).map((b: any) => String(b.name)))).sort();
+        const cs: string[] = Array.from(new Set<string>((catsRes.data?.data || []).map((c: any) => String(c.name)))).sort();
         setBrands(bs);
         setCategories(cs);
       } catch (e) {
@@ -282,49 +285,55 @@ export default function AdminProducts() {
     setLoading(true);
 
     try {
-      // Crear FormData para enviar imágenes
-      const formData = new FormData();
-      
-      // Agregar campos del formulario
-      formData.append('name', form.name);
-      formData.append('brand', form.brand);
-      formData.append('category', form.category);
-      formData.append('price', form.price.toString());
-      formData.append('stock', form.stock.toString());
-      formData.append('sku', form.sku);
-      formData.append('description', form.description || '');
-      formData.append('tags', JSON.stringify(form.tags));
-      
-      // Agregar imágenes si hay archivos seleccionados
+      // Subir imágenes nuevas a Cloudinary (si hay)
+      let uploadedUrls: { url: string; publicId: string }[] = [];
       if (selectedImages.length > 0) {
-        selectedImages.forEach((file) => {
-          formData.append('images', file);
-        });
-      } else if (form.images && form.images.length > 0) {
-        // Si no hay archivos nuevos pero hay URLs existentes (edición)
-        formData.append('existingImages', JSON.stringify(form.images));
+        const sig = await http.get(`/api/auth/cloudinary-signature`, { params: { folder: 'makers-tech/products' } });
+        const { timestamp, signature, apiKey, cloudName, folder } = sig.data;
+        const uploadFolder = folder as string;
+        for (const file of selectedImages) {
+          const fd = new FormData();
+          fd.append('file', file);
+          fd.append('api_key', apiKey);
+          fd.append('timestamp', String(timestamp));
+          fd.append('signature', signature);
+          fd.append('folder', uploadFolder);
+          const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+          const upRes = await fetch(uploadUrl, { method: 'POST', body: fd });
+          const upJson = await upRes.json();
+          if (upJson.error) throw new Error(upJson.error?.message || 'Error al subir imagen');
+          if (upJson.secure_url) uploadedUrls.push({ url: upJson.secure_url as string, publicId: upJson.public_id as string });
+        }
       }
 
+      const images: ProductImage[] = [ ...(form.images || []), ...uploadedUrls ];
+
+      const payload = {
+        name: form.name,
+        brand: form.brand,
+        category: form.category,
+        price: form.price,
+        stock: form.stock,
+        sku: form.sku,
+        description: form.description || '',
+        tags: form.tags || [],
+        images,
+      } as any;
+
       if (editing) {
-        await http.put(`${API_BASE}/api/products/${editing._id}`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        await http.put(`${API_BASE}/api/products/${editing._id}`, payload);
         showToast('Producto actualizado exitosamente.', 'success');
       } else {
-        await http.post(`${API_BASE}/api/products`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        await http.post(`${API_BASE}/api/products`, payload);
         showToast('Producto creado exitosamente.', 'success');
       }
       closeForm();
       fetchProducts();
     } catch (err) {
       if (err instanceof AxiosError) {
-        setFormError(err.response?.data?.message || 'Error al procesar la solicitud.');
+        const data: any = err.response?.data;
+        const zodMsg = Array.isArray(data?.details) ? data.details[0]?.message : null;
+        setFormError(data?.message || data?.error || zodMsg || 'Error al procesar la solicitud.');
       } else {
         setFormError('Error inesperado.');
       }
@@ -376,6 +385,19 @@ export default function AdminProducts() {
     });
   };
 
+  const removeExistingImage = async (index: number) => {
+    const img = (form.images || [])[index];
+    if (!img) return;
+    try {
+      if (editing && img.publicId) {
+        await http.delete(`${API_BASE}/api/products/${editing._id}/images/${encodeURIComponent(img.publicId)}`);
+      }
+      setForm(prev => ({ ...prev, images: (prev.images || []).filter((_, i) => i !== index) }));
+    } catch (e) {
+      showToast('No se pudo eliminar la imagen', 'error');
+    }
+  };
+
   const clearImages = () => {
     setSelectedImages([]);
     setImagePreviewUrls(prev => {
@@ -407,7 +429,7 @@ export default function AdminProducts() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Gestión de Productos</h1>
         <button 
-          className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className="h-8 px-3 inline-flex items-center justify-center gap-2 rounded-md bg-black text-white hover:bg-black/90 disabled:opacity-50 text-sm"
           onClick={openCreateForm} 
           disabled={loading}
         >
@@ -499,7 +521,7 @@ export default function AdminProducts() {
                     <span className="text-sm text-mutedText">{error}</span>
                     <button 
                       onClick={fetchProducts}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                      className="h-8 px-3 inline-flex items-center justify-center rounded-md bg-black text-white hover:bg-black/90 text-sm"
                     >
                       Reintentar
                     </button>
@@ -517,7 +539,7 @@ export default function AdminProducts() {
                     <span className="text-sm text-mutedText">Aún no se han creado productos en el sistema</span>
                     <button 
                       onClick={openCreateForm}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                      className="h-8 px-3 inline-flex items-center justify-center rounded-md bg-black text-white hover:bg-black/90 text-sm"
                     >
                       Crear Primer Producto
                     </button>
@@ -714,18 +736,27 @@ export default function AdminProducts() {
                   </label>
                   <div className="space-y-3">
                     <input 
+                      ref={imagesInputRef}
                       type="file" 
                       id="images" 
                       multiple
                       accept="image/jpeg,image/jpg,image/png,image/webp"
-                      className="w-full px-3 py-2 rounded-lg border border-border bg-surface focus:ring-2 focus:ring-primary focus:border-primary transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                      className="sr-only"
                       onChange={handleImageUpload}
                     />
+                    <div className="flex items-center gap-3">
+                      <button type="button" onClick={() => imagesInputRef.current?.click()} className="h-8 px-3 inline-flex items-center justify-center rounded-md bg-black text-white hover:bg-black/90 text-sm">
+                        Seleccionar imágenes
+                      </button>
+                      <span className="text-sm text-mutedText">
+                        {selectedImages.length > 0 ? `${selectedImages.length} archivo(s) seleccionado(s)` : 'Ningún archivo seleccionado'}
+                      </span>
+                    </div>
                     <p className="text-xs text-mutedText">
                       Formatos: JPG, PNG, WebP. Máximo 5MB por imagen.
                     </p>
                     
-                    {/* Preview de imágenes */}
+                    {/* Preview de imágenes nuevas */}
                     {imagePreviewUrls.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -749,6 +780,27 @@ export default function AdminProducts() {
                               <button
                                 type="button"
                                 onClick={() => removeImage(index)}
+                                className="absolute top-1 right-1 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Imágenes existentes */}
+                    {(form.images || []).length > 0 && (
+                      <div className="space-y-2">
+                        <span className="text-sm font-medium text-text">Imágenes existentes:</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(form.images || []).map((url, index) => (
+                            <div key={index} className="relative group">
+                              <img src={typeof url === 'string' ? url : url.url} alt={`Img ${index + 1}`} className="w-full h-20 object-cover rounded-lg border border-border" />
+                              <button
+                                type="button"
+                                onClick={() => removeExistingImage(index)}
                                 className="absolute top-1 right-1 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                               >
                                 ×
@@ -791,7 +843,7 @@ export default function AdminProducts() {
                 </button>
                 <button 
                   type="submit" 
-                  className="h-11 px-6 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-md bg-black text-white hover:bg-black/90 disabled:opacity-50 transition-colors text-sm"
                   disabled={loading}
                 >
                   {loading ? (

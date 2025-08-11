@@ -37,6 +37,25 @@ class AuthService {
         });
         return { accessToken, refreshToken };
     }
+    static async refresh(refreshToken) {
+        try {
+            const decoded = jsonwebtoken_1.default.verify(refreshToken, process.env.JWT_REFRESH_SECRET || '');
+            // Verificar que el usuario sigue activo
+            const user = await User_1.UserModel.findById(decoded.userId).lean();
+            if (!user || user.isActive === false)
+                throw new Error('Usuario no activo');
+            const accessToken = jsonwebtoken_1.default.sign({ userId: decoded.userId, role: user.role }, process.env.JWT_SECRET || '', { expiresIn: process.env.JWT_EXPIRES_IN || '15m' });
+            const newRefreshToken = jsonwebtoken_1.default.sign({ userId: decoded.userId }, process.env.JWT_REFRESH_SECRET || '', { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' });
+            return { accessToken, refreshToken: newRefreshToken };
+        }
+        catch (err) {
+            throw new Error('Refresh token inválido');
+        }
+    }
+    // Para MVP, logout es stateless (el cliente borra tokens). Mantener aquí por compatibilidad.
+    static async logout() {
+        return;
+    }
 }
 exports.AuthService = AuthService;
 //# sourceMappingURL=AuthService.js.map

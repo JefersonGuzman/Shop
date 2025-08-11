@@ -6,13 +6,19 @@ import { ProductModel } from '../models/Product';
 export class BrandController {
   async list(req: Request, res: Response): Promise<void> {
     try {
-      const { page = 1, limit = 10, sortBy = 'name', sortOrder = 'asc', search } = req.query as {
+      const { page, limit, sortBy, sortOrder, search } = req.query as {
         page?: string;
         limit?: string;
         sortBy?: string;
         sortOrder?: string;
         search?: string;
       };
+
+      // Validar parámetros requeridos
+      if (!page || !limit) {
+        res.status(400).json({ error: 'Los parámetros page y limit son requeridos' });
+        return;
+      }
 
       const pageNum = parseInt(page);
       const limitNum = parseInt(limit);
@@ -27,7 +33,9 @@ export class BrandController {
       }
 
       const sort: any = {};
-      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+      const sortByField = sortBy || 'name';
+      const sortOrderField = sortOrder || 'asc';
+      sort[sortByField] = sortOrderField === 'asc' ? 1 : -1;
 
       const total = await BrandModel.countDocuments(filter);
       const totalPages = Math.ceil(total / limitNum);
@@ -69,12 +77,17 @@ export class BrandController {
   async create(req: Request, res: Response): Promise<void> {
     try {
       const payload = BrandCreateSchema.parse(req.body);
-      const exists = await BrandModel.findOne({ slug: payload.slug });
+      // Generar slug si no viene
+      const slug = (payload.slug ?? payload.name)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      const exists = await BrandModel.findOne({ slug });
       if (exists) {
         res.status(400).json({ error: 'Slug duplicado' });
         return;
       }
-      const doc = await BrandModel.create(payload);
+      const doc = await BrandModel.create({ ...payload, slug });
       res.status(201).json({ success: true, data: doc });
     } catch (e: any) {
       res.status(400).json({ error: e.message || 'Bad request' });
@@ -84,7 +97,14 @@ export class BrandController {
   async update(req: Request, res: Response): Promise<void> {
     try {
       const payload = BrandUpdateSchema.parse(req.body);
-      const doc = await BrandModel.findByIdAndUpdate(req.params.id, payload, { new: true });
+      let update: any = { ...payload };
+      if (payload.name && !payload.slug) {
+        update.slug = payload.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
+      }
+      const doc = await BrandModel.findByIdAndUpdate(req.params.id, update, { new: true });
       res.json({ success: true, data: doc });
     } catch (e: any) {
       res.status(400).json({ error: e.message || 'Bad request' });
