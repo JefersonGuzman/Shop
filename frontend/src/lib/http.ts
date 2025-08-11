@@ -34,8 +34,8 @@ http.interceptors.response.use(
     const status = error.response?.status;
     const isRefreshEndpoint = typeof original?.url === 'string' && original.url.includes('/api/auth/refresh');
 
-    // Si el token es inválido (403) o estamos en refresh fallido, limpiar y redirigir
-    if (status === 403 || (status === 401 && isRefreshEndpoint)) {
+  // Si estamos en refresh fallido (401 en /refresh), limpiar y redirigir
+  if (status === 401 && isRefreshEndpoint) {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       redirectToLogin();
