@@ -89,12 +89,17 @@ export class ChatController {
         }
       }
 
-      // Generar respuesta de IA
+      // Generar respuesta de IA con contexto de historial para evitar saludos repetidos
+      const isFirstTurn = (session.messages.filter(m => m.role === 'assistant').length === 0);
       const response = await aiService.processUserQuery(
         effectiveMessage,
         userContext,
         currentPromotions,
-        storeStatus
+        storeStatus,
+        {
+          history: session.messages.map(m => ({ role: m.role, content: m.content })),
+          isFirstTurn
+        }
       );
 
       // Revisar si la IA está pidiendo desambiguación y limpiar el tag
@@ -104,6 +109,13 @@ export class ChatController {
       if (response.content.includes('[DISAMBIGUATION_PROMPT]')) {
         responseContent = response.content.replace('[DISAMBIGUATION_PROMPT]', '').trim();
         responseActionType = 'disambiguation_prompt';
+      }
+
+      // Evitar saludos repetidos en turnos posteriores
+      const assistantCount = session.messages.filter(m => m.role === 'assistant').length;
+      if (assistantCount > 0) {
+        responseContent = responseContent.replace(/^(\s*)(hola|¡hola|buenas|buenos días|buenas tardes|bienvenido[a]?|bienvenid[oa]s)[!¡,\.\s]*/i, '$1');
+        responseContent = responseContent.trimStart();
       }
 
       // Guardar respuesta del asistente

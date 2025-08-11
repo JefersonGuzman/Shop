@@ -16,7 +16,11 @@ export class AIService {
     userMessage: string,
     userContext?: any,
     currentPromotions?: any,
-    storeStatus?: any
+    storeStatus?: any,
+    options?: {
+      history?: { role: 'user' | 'assistant'; content: string }[];
+      isFirstTurn?: boolean;
+    }
   ): Promise<LLMResponse> {
     const config = await AIConfigModel.findOne({ isActive: true }).sort({ updatedAt: -1 }).lean();
     const provider: 'groq' | 'openai' = (config?.provider as any) || 'groq';
@@ -28,13 +32,14 @@ export class AIService {
         config,
         userContext,
         currentPromotions,
-        storeStatus
+        storeStatus,
+        options
       );
       return response;
     } catch (e) {
       const fallback: 'groq' | 'openai' = provider === 'groq' ? 'openai' : 'groq';
       try {
-        const response = await this.generateWithProvider(fallback, userMessage, undefined);
+        const response = await this.generateWithProvider(fallback, userMessage, undefined, undefined, undefined, undefined, options);
         return response;
       } catch {
         return {
@@ -54,24 +59,121 @@ export class AIService {
     cfg?: any,
     userContext?: any,
     currentPromotions?: any,
-    storeStatus?: any
+    storeStatus?: any,
+    options?: {
+      history?: { role: 'user' | 'assistant'; content: string }[];
+      isFirstTurn?: boolean;
+    }
   ): Promise<LLMResponse> {
-    // Obtener inventario básico para contexto (máx 25 productos)
-    const inventory = await ProductModel.find({ isActive: true, stock: { $gt: 0 } })
+    // Heurísticas: derivar términos de búsqueda dinámicamente desde tags/categorías de productos, sin sinónimos quemados
+    const normalized = (message || '').toLowerCase();
+    
+    const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
+    // Extraer tokens significativos del mensaje (español)
+    const stopwords = new Set<string>([
+      'hola','buenas','quiero','busco','necesito','me','para','por','de','del','la','el','los','las','un','una','unos','unas','que','con','sin','en','y','o','u','mi','su','sus','mis','tengo','hay','cual','cuál','cuales','cuáles','cualquier','como','cómo','mas','más','menos','segun','según','sobre','esto','ese','esa','este','estas','estos','esas','esos','uso','usar','sirve','sirven','nuevo','nueva','nuevos','nuevas','barato','barata','baratos','baratas','baratito','costoso','caro','cara','caros','caras','precio','presupuesto','maximo','máximo','hasta','aprox','aproximadamente','alrededor','entre','debo','podria','podría','ayuda','ayudame','ayúdame','ver','mostrar','muéstrame','muestrame'
+    ]);
+    const tokens = (normalized.match(/[a-záéíóúüñ0-9]+/gi) || [])
+      .map(t => t.trim())
+      .filter(t => t.length >= 3 && !stopwords.has(t));
+
+    // Consultar tags y categorías existentes en inventario activo para intersectar con tokens del usuario
+    const [existingTagsRaw, existingCategoriesRaw] = await Promise.all([
+      ProductModel.distinct('tags', { isActive: true, stock: { $gt: 0 } }),
+      ProductModel.distinct('category', { isActive: true, stock: { $gt: 0 } })
+    ]);
+
+    const existingTags = (existingTagsRaw as unknown[])
+      .map(v => (typeof v === 'string' ? v : ''))
+      .filter(Boolean)
+      .map(v => v.toLowerCase().trim());
+    const existingCategories = (existingCategoriesRaw as unknown[])
+      .map(v => (typeof v === 'string' ? v : ''))
+      .filter(Boolean)
+      .map(v => v.toLowerCase().trim());
+
+    // Términos que existen en tags/categorías
+    const matchedFromTags = Array.from(new Set(existingTags.filter(tag => tokens.some(t => tag.includes(t) || t.includes(tag)))));
+    const matchedFromCategories = Array.from(new Set(existingCategories.filter(cat => tokens.some(t => cat.includes(t) || t.includes(cat)))));
+    
+    // Si no hay intersección, usa tokens como términos de búsqueda genéricos
+    const searchTerms = (matchedFromTags.length + matchedFromCategories.length > 0)
+      ? Array.from(new Set([...matchedFromTags, ...matchedFromCategories]))
+      : Array.from(new Set(tokens));
+    
+    const categoryRegexParts: string[] = searchTerms.map(escapeRegex);
+
+    // Extraer presupuesto como número (ej: 2.500.000, 2500000, $2,5M)
+    let budgetMax: number | undefined;
+    const digitsMatch = normalized.match(/\$?\s*([\d\.\,]{4,})/);
+    if (digitsMatch) {
+      const raw = digitsMatch[1].replace(/\./g, '').replace(/\,/g, '');
+      const parsed = Number(raw);
+      if (!Number.isNaN(parsed) && parsed > 0) budgetMax = parsed;
+    }
+
+    // Construir filtro del inventario a partir de términos dinámicos
+    const invFilter: Record<string, unknown> = { isActive: true, stock: { $gt: 0 } };
+    const combinedRegex = categoryRegexParts.join('|');
+    if (categoryRegexParts.length > 0) {
+      (invFilter as any).$or = [
+        { name: { $regex: combinedRegex, $options: 'i' } },
+        { brand: { $regex: combinedRegex, $options: 'i' } },
+        { category: { $regex: combinedRegex, $options: 'i' } },
+        { tags: { $elemMatch: { $regex: combinedRegex, $options: 'i' } } }
+      ];
+    }
+    if (typeof budgetMax === 'number') invFilter.price = { $lte: budgetMax };
+
+    // Obtener inventario filtrado (máx 25 productos)
+    if (process.env.LOG_LEVEL === 'debug') {
+      console.log('[AIService] InvFilter:', JSON.stringify(invFilter));
+    }
+
+    let inventory = await ProductModel.find(invFilter)
       .select('name brand category price stock sku')
       .limit(25)
       .lean();
 
+    // Si no hay coincidencias con presupuesto, intentar sin presupuesto, manteniendo términos
+    if ((!inventory || inventory.length === 0) && categoryRegexParts.length > 0 && typeof budgetMax === 'number') {
+      const fallbackFilter: Record<string, unknown> = {
+        isActive: true,
+        stock: { $gt: 0 },
+        $or: [
+          { name: { $regex: combinedRegex, $options: 'i' } },
+          { brand: { $regex: combinedRegex, $options: 'i' } },
+          { category: { $regex: combinedRegex, $options: 'i' } },
+          { tags: { $elemMatch: { $regex: combinedRegex, $options: 'i' } } }
+        ]
+      } as any;
+      inventory = await ProductModel.find(fallbackFilter)
+        .select('name brand category price stock sku')
+        .limit(25)
+        .lean();
+    }
+
+    if (process.env.LOG_LEVEL === 'debug') {
+      console.log('[AIService] Inventory matches:', inventory?.length || 0);
+    }
+
     // Si no hay inventario, no llamamos al LLM. Respuesta determinística conservadora
     if (!inventory || inventory.length === 0) {
+      // Respuesta determinística específica si había términos o presupuesto
+      const reasonParts: string[] = [];
+      if (categoryRegexParts.length > 0) reasonParts.push(`según los términos "${searchTerms.slice(0, 3).join('/')}${searchTerms.length > 3 ? '/…' : ''}"`);
+      if (typeof budgetMax === 'number') reasonParts.push(`dentro del presupuesto de $${budgetMax}`);
+      const reason = reasonParts.length > 0 ? ` ${reasonParts.join(' ')}` : '';
       return {
         content:
-          'Por el momento no tenemos productos disponibles en stock. Puedo notificarte cuando repongamos el inventario o ponerte en contacto con un asesor para tomar tus datos. ¿Quieres que te avise cuando haya disponibilidad?',
+          `Por el momento no encuentro productos disponibles${reason}. ¿Deseas ajustar la categoría o el presupuesto, o prefieres hablar con un asesor?`,
         provider: 'rule',
-        model: 'no-inventory',
+        model: 'no-matches',
         suggestedProducts: [],
         followUpQuestions: [
-          '¿Deseas que te notifique cuando haya stock?',
+          '¿Quieres que busque en otra categoría?',
+          '¿Deseas ampliar el presupuesto máximo?'
         ],
       };
     }
@@ -94,6 +196,8 @@ export class AIService {
       )
       .join('\n');
 
+    const isFirstTurn = options?.isFirstTurn !== false; // default true si no se envía
+
     let systemPrompt = `
 # Makers Tech ChatBot - System Prompt (operativo)
 
@@ -109,6 +213,7 @@ Reglas críticas (obligatorias):
 - Pide presupuesto, uso previsto y preferencias cuando falte contexto.
 - Da precios y disponibilidad concretos solo si existen en el inventario.
 - Resume brevemente y ofrece siguiente paso claro.
+ - No repitas saludos. Solo saluda en el primer turno de la sesión. Si no es el primer turno, responde directo al punto sin "Hola" ni "Bienvenido".
 
 Resumen del inventario actual:
 - Total de productos disponibles: ${total}
@@ -118,7 +223,7 @@ Listado de inventario (máx 25):
 ${inventoryList || '- (Sin productos en stock)'}
 
 Instrucciones de respuesta:
-1) Reconoce la consulta.
+1) Reconoce la consulta${isFirstTurn ? ' con un saludo breve' : ' sin saludar nuevamente'}.
 2) Si hay stock relevante, sugiere 1-3 opciones concretas del listado con razón breve.
 3) Si no hay stock, indícalo y propone alternativas (otras categorías/marcas, aviso de disponibilidad, hablar con agente).
 4) Haz una pregunta de seguimiento útil (presupuesto, uso, marca preferida).
@@ -146,9 +251,9 @@ Ahora responde a la consulta del usuario: "${message}"
       }
 
       if (provider === 'groq') {
-        return await this.generateWithGroq(systemPrompt, message, normalized.apiKey, normalized.model, normalized.temperature, normalized.maxTokens);
+        return await this.generateWithGroq(systemPrompt, message, normalized.apiKey, normalized.model, normalized.temperature, normalized.maxTokens, options?.history);
       } else if (provider === 'openai') {
-        return await this.generateWithOpenAI(systemPrompt, message, normalized.apiKey, normalized.model, normalized.temperature, normalized.maxTokens);
+        return await this.generateWithOpenAI(systemPrompt, message, normalized.apiKey, normalized.model, normalized.temperature, normalized.maxTokens, options?.history);
       }
 
       throw new Error(`Provider no soportado: ${provider}`);
@@ -164,7 +269,8 @@ Ahora responde a la consulta del usuario: "${message}"
     apiKey: string,
     model: string,
     temperature: number,
-    maxTokens: number
+    maxTokens: number,
+    history?: { role: 'user' | 'assistant'; content: string }[]
   ): Promise<LLMResponse> {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -176,6 +282,7 @@ Ahora responde a la consulta del usuario: "${message}"
         model,
         messages: [
           { role: 'system', content: systemPrompt },
+          ...(history || []).slice(-8),
           { role: 'user', content: userMessage }
         ],
         temperature,
@@ -207,7 +314,8 @@ Ahora responde a la consulta del usuario: "${message}"
     apiKey: string,
     model: string,
     temperature: number,
-    maxTokens: number
+    maxTokens: number,
+    history?: { role: 'user' | 'assistant'; content: string }[]
   ): Promise<LLMResponse> {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -219,6 +327,7 @@ Ahora responde a la consulta del usuario: "${message}"
         model,
         messages: [
           { role: 'system', content: systemPrompt },
+          ...(history || []).slice(-8),
           { role: 'user', content: userMessage }
         ],
         temperature,

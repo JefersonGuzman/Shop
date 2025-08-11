@@ -5,17 +5,17 @@ const AIConfig_1 = require("../models/AIConfig");
 const Product_1 = require("../models/Product");
 const crypto_1 = require("../utils/crypto");
 class AIService {
-    async processUserQuery(userMessage, userContext, currentPromotions, storeStatus) {
+    async processUserQuery(userMessage, userContext, currentPromotions, storeStatus, options) {
         const config = await AIConfig_1.AIConfigModel.findOne({ isActive: true }).sort({ updatedAt: -1 }).lean();
         const provider = config?.provider || 'groq';
         try {
-            const response = await this.generateWithProvider(provider, userMessage, config, userContext, currentPromotions, storeStatus);
+            const response = await this.generateWithProvider(provider, userMessage, config, userContext, currentPromotions, storeStatus, options);
             return response;
         }
         catch (e) {
             const fallback = provider === 'groq' ? 'openai' : 'groq';
             try {
-                const response = await this.generateWithProvider(fallback, userMessage, undefined);
+                const response = await this.generateWithProvider(fallback, userMessage, undefined, undefined, undefined, undefined, options);
                 return response;
             }
             catch {
@@ -29,21 +29,71 @@ class AIService {
             }
         }
     }
-    async generateWithProvider(provider, message, cfg, userContext, currentPromotions, storeStatus) {
-        // Obtener inventario básico para contexto (máx 25 productos)
-        const inventory = await Product_1.ProductModel.find({ isActive: true, stock: { $gt: 0 } })
+    async generateWithProvider(provider, message, cfg, userContext, currentPromotions, storeStatus, options) {
+        // Heurísticas simples: detectar categoría e intención y presupuesto máximo
+        const normalized = (message || '').toLowerCase();
+        const categoryHints = [];
+        if (/(tablet|tableta|ipad)/i.test(normalized))
+            categoryHints.push('tablet');
+        if (/(laptop|portátil|portatil|notebook)/i.test(normalized))
+            categoryHints.push('laptop');
+        if (/(smartphone|celular|móvil|movil|teléfono|telefono)/i.test(normalized))
+            categoryHints.push('smartphone');
+        // Construir regex de categorías a partir de sinónimos, para coincidir con valores como "Portátil/Laptop"
+        const categoryRegexParts = [];
+        for (const hint of categoryHints) {
+            if (hint === 'laptop')
+                categoryRegexParts.push('(laptop|portátil|portatil|notebook)');
+            if (hint === 'tablet')
+                categoryRegexParts.push('(tablet|tableta|ipad)');
+            if (hint === 'smartphone')
+                categoryRegexParts.push('(smartphone|celular|móvil|movil|teléfono|telefono)');
+        }
+        // Extraer presupuesto como número (ej: 2.500.000, 2500000, $2,5M)
+        let budgetMax;
+        const digitsMatch = normalized.match(/\$?\s*([\d\.\,]{4,})/);
+        if (digitsMatch) {
+            const raw = digitsMatch[1].replace(/\./g, '').replace(/\,/g, '');
+            const parsed = Number(raw);
+            if (!Number.isNaN(parsed) && parsed > 0)
+                budgetMax = parsed;
+        }
+        // Construir filtro del inventario a partir de heurísticas
+        const invFilter = { isActive: true, stock: { $gt: 0 } };
+        if (categoryRegexParts.length > 0)
+            invFilter.category = { $regex: categoryRegexParts.join('|'), $options: 'i' };
+        if (typeof budgetMax === 'number')
+            invFilter.price = { $lte: budgetMax };
+        // Obtener inventario filtrado (máx 25 productos)
+        let inventory = await Product_1.ProductModel.find(invFilter)
             .select('name brand category price stock sku')
             .limit(25)
             .lean();
+        // Si no hay coincidencias con presupuesto, intentar sin presupuesto, manteniendo categoría
+        if ((!inventory || inventory.length === 0) && categoryRegexParts.length > 0 && typeof budgetMax === 'number') {
+            const fallbackFilter = { isActive: true, stock: { $gt: 0 }, category: { $regex: categoryRegexParts.join('|'), $options: 'i' } };
+            inventory = await Product_1.ProductModel.find(fallbackFilter)
+                .select('name brand category price stock sku')
+                .limit(25)
+                .lean();
+        }
         // Si no hay inventario, no llamamos al LLM. Respuesta determinística conservadora
         if (!inventory || inventory.length === 0) {
+            // Respuesta determinística específica si había intención/categoría o presupuesto
+            const reasonParts = [];
+            if (categoryHints.length > 0)
+                reasonParts.push(`en la categoría ${categoryHints.join('/')}`);
+            if (typeof budgetMax === 'number')
+                reasonParts.push(`dentro del presupuesto de $${budgetMax}`);
+            const reason = reasonParts.length > 0 ? ` ${reasonParts.join(' ')}` : '';
             return {
-                content: 'Por el momento no tenemos productos disponibles en stock. Puedo notificarte cuando repongamos el inventario o ponerte en contacto con un asesor para tomar tus datos. ¿Quieres que te avise cuando haya disponibilidad?',
+                content: `Por el momento no encuentro productos disponibles${reason}. ¿Deseas ajustar la categoría o el presupuesto, o prefieres hablar con un asesor?`,
                 provider: 'rule',
-                model: 'no-inventory',
+                model: 'no-matches',
                 suggestedProducts: [],
                 followUpQuestions: [
-                    '¿Deseas que te notifique cuando haya stock?',
+                    '¿Quieres que busque en otra categoría?',
+                    '¿Deseas ampliar el presupuesto máximo?'
                 ],
             };
         }
@@ -61,6 +111,7 @@ class AIService {
         const inventoryList = inventory
             .map((p) => `- ${p.name} (${p.brand}) | Categoría: ${p.category} | Precio: $${p.price} | Stock: ${p.stock} | SKU: ${p.sku}`)
             .join('\n');
+        const isFirstTurn = options?.isFirstTurn !== false; // default true si no se envía
         let systemPrompt = `
 # Makers Tech ChatBot - System Prompt (operativo)
 
@@ -76,6 +127,7 @@ Reglas críticas (obligatorias):
 - Pide presupuesto, uso previsto y preferencias cuando falte contexto.
 - Da precios y disponibilidad concretos solo si existen en el inventario.
 - Resume brevemente y ofrece siguiente paso claro.
+ - No repitas saludos. Solo saluda en el primer turno de la sesión. Si no es el primer turno, responde directo al punto sin "Hola" ni "Bienvenido".
 
 Resumen del inventario actual:
 - Total de productos disponibles: ${total}
@@ -85,7 +137,7 @@ Listado de inventario (máx 25):
 ${inventoryList || '- (Sin productos en stock)'}
 
 Instrucciones de respuesta:
-1) Reconoce la consulta.
+1) Reconoce la consulta${isFirstTurn ? ' con un saludo breve' : ' sin saludar nuevamente'}.
 2) Si hay stock relevante, sugiere 1-3 opciones concretas del listado con razón breve.
 3) Si no hay stock, indícalo y propone alternativas (otras categorías/marcas, aviso de disponibilidad, hablar con agente).
 4) Haz una pregunta de seguimiento útil (presupuesto, uso, marca preferida).
@@ -107,10 +159,10 @@ Ahora responde a la consulta del usuario: "${message}"
                 throw new Error(`API key no configurada para proveedor ${provider}`);
             }
             if (provider === 'groq') {
-                return await this.generateWithGroq(systemPrompt, message, normalized.apiKey, normalized.model, normalized.temperature, normalized.maxTokens);
+                return await this.generateWithGroq(systemPrompt, message, normalized.apiKey, normalized.model, normalized.temperature, normalized.maxTokens, options?.history);
             }
             else if (provider === 'openai') {
-                return await this.generateWithOpenAI(systemPrompt, message, normalized.apiKey, normalized.model, normalized.temperature, normalized.maxTokens);
+                return await this.generateWithOpenAI(systemPrompt, message, normalized.apiKey, normalized.model, normalized.temperature, normalized.maxTokens, options?.history);
             }
             throw new Error(`Provider no soportado: ${provider}`);
         }
@@ -119,7 +171,7 @@ Ahora responde a la consulta del usuario: "${message}"
             throw error;
         }
     }
-    async generateWithGroq(systemPrompt, userMessage, apiKey, model, temperature, maxTokens) {
+    async generateWithGroq(systemPrompt, userMessage, apiKey, model, temperature, maxTokens, history) {
         const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -130,6 +182,7 @@ Ahora responde a la consulta del usuario: "${message}"
                 model,
                 messages: [
                     { role: 'system', content: systemPrompt },
+                    ...(history || []).slice(-8),
                     { role: 'user', content: userMessage }
                 ],
                 temperature,
@@ -151,7 +204,7 @@ Ahora responde a la consulta del usuario: "${message}"
             followUpQuestions: []
         };
     }
-    async generateWithOpenAI(systemPrompt, userMessage, apiKey, model, temperature, maxTokens) {
+    async generateWithOpenAI(systemPrompt, userMessage, apiKey, model, temperature, maxTokens, history) {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -162,6 +215,7 @@ Ahora responde a la consulta del usuario: "${message}"
                 model,
                 messages: [
                     { role: 'system', content: systemPrompt },
+                    ...(history || []).slice(-8),
                     { role: 'user', content: userMessage }
                 ],
                 temperature,
