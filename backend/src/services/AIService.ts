@@ -68,18 +68,22 @@ export class AIService {
       isFirstTurn?: boolean;
     }
   ): Promise<LLMResponse> {
-    // Heurísticas: derivar términos de búsqueda dinámicamente desde tags/categorías de productos, sin sinónimos quemados
     const foldDiacritics = (value: string): string =>
       (value || '')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '') // eliminar tildes/diacríticos
         .toLowerCase();
 
-    const normalized = foldDiacritics(message || '');
+ 
+    const userHistoryTexts = (options?.history || [])
+      .filter((m) => m.role === 'user')
+      .slice(-5)
+      .map((m) => m.content || '');
+    const combinedUserText = [message || '', ...userHistoryTexts].join(' ').trim();
+    const normalized = foldDiacritics(combinedUserText);
     
     const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    
-    // Extraer tokens significativos del mensaje usando stopwords desde configuración (sin datos quemados)
+
     const configuredStopwordsArray = Array.isArray((cfg as any)?.stopwords)
       ? ((cfg as any).stopwords as string[])
       : [];
