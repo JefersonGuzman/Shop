@@ -33,10 +33,10 @@ class ChatController {
                 deliveryInfo: 'Envío gratis en compras >$100',
                 supportHours: 'Lun-Sáb 9AM-8PM, Dom 10AM-6PM',
             };
-            // Obtener o crear sesión
+            // Obtener o crear sesión (asociar al usuario si existe)
             let session = await ChatSession_1.ChatSessionModel.findOne({ sessionId });
             if (!session) {
-                session = await ChatSession_1.ChatSessionModel.create({ sessionId, messages: [], isActive: true });
+                session = await ChatSession_1.ChatSessionModel.create({ sessionId, messages: [], isActive: true, userId: req.user?.id });
             }
             // Guardar mensaje del usuario
             session.messages.push({ role: 'user', content: message, timestamp: new Date() });
@@ -117,6 +117,47 @@ class ChatController {
         }
         const session = await ChatSession_1.ChatSessionModel.findOne({ sessionId });
         res.json({ success: true, data: session?.messages ?? [] });
+    }
+    async listSessions(req, res) {
+        const limit = Math.max(1, Math.min(10, Number(req.query.limit || 3)));
+        const idsParam = String(req.query.ids || '').trim();
+        const ids = idsParam ? idsParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
+        let criteria = {};
+        // Si hay usuario autenticado, listar por userId
+        const maybeUser = req.user;
+        if (maybeUser?.id) {
+            criteria.userId = maybeUser.id;
+        }
+        else if (ids.length > 0) {
+            // Si no hay usuario, pero nos pasan sessionIds, limitar a esos
+            criteria.sessionId = { $in: ids };
+        }
+        else {
+            // Sin usuario ni ids, no exponemos sesiones
+            res.json({ success: true, data: [] });
+            return;
+        }
+        const sessions = await ChatSession_1.ChatSessionModel.find(criteria)
+            .sort({ updatedAt: -1 })
+            .limit(limit)
+            .select('sessionId createdAt updatedAt messages')
+            .lean();
+        const data = sessions.map((s) => ({
+            sessionId: s.sessionId,
+            createdAt: s.createdAt,
+            updatedAt: s.updatedAt,
+            lastMessage: Array.isArray(s.messages) && s.messages.length > 0 ? s.messages[s.messages.length - 1].content : ''
+        }));
+        res.json({ success: true, data });
+    }
+    async deleteSession(req, res) {
+        const sessionId = String((req.query.sessionId || req.body?.sessionId || '')).trim();
+        if (!sessionId) {
+            res.status(400).json({ error: 'sessionId requerido' });
+            return;
+        }
+        await ChatSession_1.ChatSessionModel.deleteOne({ sessionId });
+        res.json({ success: true });
     }
 }
 exports.ChatController = ChatController;

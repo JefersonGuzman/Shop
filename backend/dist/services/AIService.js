@@ -30,25 +30,37 @@ class AIService {
         }
     }
     async generateWithProvider(provider, message, cfg, userContext, currentPromotions, storeStatus, options) {
-        // Heurísticas simples: detectar categoría e intención y presupuesto máximo
+        // Heurísticas: derivar términos de búsqueda dinámicamente desde tags/categorías de productos, sin sinónimos quemados
         const normalized = (message || '').toLowerCase();
-        const categoryHints = [];
-        if (/(tablet|tableta|ipad)/i.test(normalized))
-            categoryHints.push('tablet');
-        if (/(laptop|portátil|portatil|notebook)/i.test(normalized))
-            categoryHints.push('laptop');
-        if (/(smartphone|celular|móvil|movil|teléfono|telefono)/i.test(normalized))
-            categoryHints.push('smartphone');
-        // Construir regex de categorías a partir de sinónimos, para coincidir con valores como "Portátil/Laptop"
-        const categoryRegexParts = [];
-        for (const hint of categoryHints) {
-            if (hint === 'laptop')
-                categoryRegexParts.push('(laptop|portátil|portatil|notebook)');
-            if (hint === 'tablet')
-                categoryRegexParts.push('(tablet|tableta|ipad)');
-            if (hint === 'smartphone')
-                categoryRegexParts.push('(smartphone|celular|móvil|movil|teléfono|telefono)');
-        }
+        const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // Extraer tokens significativos del mensaje (español)
+        const stopwords = new Set([
+            'hola', 'buenas', 'quiero', 'busco', 'necesito', 'me', 'para', 'por', 'de', 'del', 'la', 'el', 'los', 'las', 'un', 'una', 'unos', 'unas', 'que', 'con', 'sin', 'en', 'y', 'o', 'u', 'mi', 'su', 'sus', 'mis', 'tengo', 'hay', 'cual', 'cuál', 'cuales', 'cuáles', 'cualquier', 'como', 'cómo', 'mas', 'más', 'menos', 'segun', 'según', 'sobre', 'esto', 'ese', 'esa', 'este', 'estas', 'estos', 'esas', 'esos', 'uso', 'usar', 'sirve', 'sirven', 'nuevo', 'nueva', 'nuevos', 'nuevas', 'barato', 'barata', 'baratos', 'baratas', 'baratito', 'costoso', 'caro', 'cara', 'caros', 'caras', 'precio', 'presupuesto', 'maximo', 'máximo', 'hasta', 'aprox', 'aproximadamente', 'alrededor', 'entre', 'debo', 'podria', 'podría', 'ayuda', 'ayudame', 'ayúdame', 'ver', 'mostrar', 'muéstrame', 'muestrame'
+        ]);
+        const tokens = (normalized.match(/[a-záéíóúüñ0-9]+/gi) || [])
+            .map(t => t.trim())
+            .filter(t => t.length >= 3 && !stopwords.has(t));
+        // Consultar tags y categorías existentes en inventario activo para intersectar con tokens del usuario
+        const [existingTagsRaw, existingCategoriesRaw] = await Promise.all([
+            Product_1.ProductModel.distinct('tags', { isActive: true, stock: { $gt: 0 } }),
+            Product_1.ProductModel.distinct('category', { isActive: true, stock: { $gt: 0 } })
+        ]);
+        const existingTags = existingTagsRaw
+            .map(v => (typeof v === 'string' ? v : ''))
+            .filter(Boolean)
+            .map(v => v.toLowerCase().trim());
+        const existingCategories = existingCategoriesRaw
+            .map(v => (typeof v === 'string' ? v : ''))
+            .filter(Boolean)
+            .map(v => v.toLowerCase().trim());
+        // Términos que existen en tags/categorías
+        const matchedFromTags = Array.from(new Set(existingTags.filter(tag => tokens.some(t => tag.includes(t) || t.includes(tag)))));
+        const matchedFromCategories = Array.from(new Set(existingCategories.filter(cat => tokens.some(t => cat.includes(t) || t.includes(cat)))));
+        // Si no hay intersección, usa tokens como términos de búsqueda genéricos
+        const searchTerms = (matchedFromTags.length + matchedFromCategories.length > 0)
+            ? Array.from(new Set([...matchedFromTags, ...matchedFromCategories]))
+            : Array.from(new Set(tokens));
+        const categoryRegexParts = searchTerms.map(escapeRegex);
         // Extraer presupuesto como número (ej: 2.500.000, 2500000, $2,5M)
         let budgetMax;
         const digitsMatch = normalized.match(/\$?\s*([\d\.\,]{4,})/);
@@ -58,31 +70,53 @@ class AIService {
             if (!Number.isNaN(parsed) && parsed > 0)
                 budgetMax = parsed;
         }
-        // Construir filtro del inventario a partir de heurísticas
+        // Construir filtro del inventario a partir de términos dinámicos
         const invFilter = { isActive: true, stock: { $gt: 0 } };
-        if (categoryRegexParts.length > 0)
-            invFilter.category = { $regex: categoryRegexParts.join('|'), $options: 'i' };
+        const combinedRegex = categoryRegexParts.join('|');
+        if (categoryRegexParts.length > 0) {
+            invFilter.$or = [
+                { name: { $regex: combinedRegex, $options: 'i' } },
+                { brand: { $regex: combinedRegex, $options: 'i' } },
+                { category: { $regex: combinedRegex, $options: 'i' } },
+                { tags: { $elemMatch: { $regex: combinedRegex, $options: 'i' } } }
+            ];
+        }
         if (typeof budgetMax === 'number')
             invFilter.price = { $lte: budgetMax };
         // Obtener inventario filtrado (máx 25 productos)
+        if (process.env.LOG_LEVEL === 'debug') {
+            console.log('[AIService] InvFilter:', JSON.stringify(invFilter));
+        }
         let inventory = await Product_1.ProductModel.find(invFilter)
             .select('name brand category price stock sku')
             .limit(25)
             .lean();
-        // Si no hay coincidencias con presupuesto, intentar sin presupuesto, manteniendo categoría
+        // Si no hay coincidencias con presupuesto, intentar sin presupuesto, manteniendo términos
         if ((!inventory || inventory.length === 0) && categoryRegexParts.length > 0 && typeof budgetMax === 'number') {
-            const fallbackFilter = { isActive: true, stock: { $gt: 0 }, category: { $regex: categoryRegexParts.join('|'), $options: 'i' } };
+            const fallbackFilter = {
+                isActive: true,
+                stock: { $gt: 0 },
+                $or: [
+                    { name: { $regex: combinedRegex, $options: 'i' } },
+                    { brand: { $regex: combinedRegex, $options: 'i' } },
+                    { category: { $regex: combinedRegex, $options: 'i' } },
+                    { tags: { $elemMatch: { $regex: combinedRegex, $options: 'i' } } }
+                ]
+            };
             inventory = await Product_1.ProductModel.find(fallbackFilter)
                 .select('name brand category price stock sku')
                 .limit(25)
                 .lean();
         }
+        if (process.env.LOG_LEVEL === 'debug') {
+            console.log('[AIService] Inventory matches:', inventory?.length || 0);
+        }
         // Si no hay inventario, no llamamos al LLM. Respuesta determinística conservadora
         if (!inventory || inventory.length === 0) {
-            // Respuesta determinística específica si había intención/categoría o presupuesto
+            // Respuesta determinística específica si había términos o presupuesto
             const reasonParts = [];
-            if (categoryHints.length > 0)
-                reasonParts.push(`en la categoría ${categoryHints.join('/')}`);
+            if (categoryRegexParts.length > 0)
+                reasonParts.push(`según los términos "${searchTerms.slice(0, 3).join('/')}${searchTerms.length > 3 ? '/…' : ''}"`);
             if (typeof budgetMax === 'number')
                 reasonParts.push(`dentro del presupuesto de $${budgetMax}`);
             const reason = reasonParts.length > 0 ? ` ${reasonParts.join(' ')}` : '';
