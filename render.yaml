@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: makers-tech-backend
+    env: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: CRYPTO_SECRET_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        value: https://makers-tech-frontend.onrender.com
+      - key: LOG_LEVEL
+        value: info
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+
+  - type: static
+    name: makers-tech-frontend
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE
+        value: https://makers-tech-backend.onrender.com
+
