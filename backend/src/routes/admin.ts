@@ -8,8 +8,8 @@ const router = Router();
 router.use(authenticateToken);
 // Requiere staff por defecto y especificamos admin donde aplique
 router.use((req, res, next) => {
-  // Permitir GET /orders a empleados también
-  if (req.method === 'GET' && req.path.startsWith('/orders')) {
+  // Permitir GET /orders y GET /analytics a empleados también
+  if (req.method === 'GET' && (req.path.startsWith('/orders') || req.path.startsWith('/analytics'))) {
     return requireStaff(req as any, res, next);
   }
   // Resto del admin panel requiere admin
@@ -30,6 +30,9 @@ router.delete('/users/:id', controller.deleteUser.bind(controller));
 router.get('/orders', controller.listOrders.bind(controller)); // staff permitido
 router.patch('/orders/:id', controller.updateOrder.bind(controller)); // solo admin por el guard superior
 router.delete('/orders/:id', controller.deleteOrder.bind(controller)); // solo admin
+
+// Analytics
+router.get('/analytics/sales', controller.getSalesAnalytics.bind(controller));
 
 export default router;
 
