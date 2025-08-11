@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { formatMoney } from '../lib/format';
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, clear } = useCart();
+  const navigate = useNavigate();
   const subtotal = useMemo(() => items.reduce((acc, it) => acc + it.price * it.quantity, 0), [items]);
 
   if (items.length === 0) {
@@ -46,7 +48,7 @@ export default function CartPage() {
             <span className="font-semibold">${formatMoney(subtotal)}</span>
           </div>
           <div className="text-xs text-mutedText mb-4">Los impuestos y gastos de envío se calculan en el checkout.</div>
-          <button className="w-full h-10 rounded-md bg-black text-white hover:bg-black/90">Proceder al pago</button>
+          <button className="w-full h-10 rounded-md bg-black text-white hover:bg-black/90" onClick={() => navigate('/checkout')}>Proceder al pago</button>
           <button className="w-full h-10 rounded-md border border-border mt-2" onClick={clear}>Vaciar carrito</button>
         </aside>
       </div>

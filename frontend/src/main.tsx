@@ -4,6 +4,7 @@ import './index.css'
 import Home from './pages/Home.tsx'
 import ProductDetail from './pages/ProductDetail.tsx'
 import CartPage from './pages/Cart.tsx'
+import Checkout from './pages/Checkout.tsx'
 import HelpCenter from './pages/HelpCenter.tsx'
 import Returns from './pages/Returns.tsx'
 import Contact from './pages/Contact.tsx'
@@ -40,6 +41,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/" element={<Home />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/help" element={<HelpCenter />} />
           <Route path="/returns" element={<Returns />} />
           <Route path="/contact" element={<Contact />} />

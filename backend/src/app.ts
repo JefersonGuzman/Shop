@@ -11,6 +11,7 @@ import productsRouter from './routes/products';
 import offersRouter from './routes/offers';
 import categoriesRouter from './routes/categories';
 import brandsRouter from './routes/brands';
+import ordersRouter from './routes/orders';
 
 export function createApp(): Application {
   const app = express();
@@ -59,6 +60,7 @@ export function createApp(): Application {
   app.use('/api/chat', chatRouter);
   app.use('/api/admin', adminRouter);
   app.use('/api/offers', offersRouter);
+  app.use('/api/orders', ordersRouter);
 
   return app;
 }

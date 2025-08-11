@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { formatMoney } from '../lib/format';
 
@@ -68,6 +68,20 @@ export default function ProductDetail() {
   return (
     <div className="max-w-[1280px] mx-auto px-4 py-6 text-text">
       <div className="bg-white border border-border rounded-2xl shadow-sm p-4 md:p-6">
+      {/* Breadcrumb */}
+      <nav className="text-sm text-mutedText mb-4">
+        <Link to="/" className="hover:underline">Inicio</Link>
+        <span className="mx-1">›</span>
+        <span className="text-text/80">Producto</span>
+        {product?.category && (
+          <>
+            <span className="mx-1">›</span>
+            <Link to={`/?cat=${encodeURIComponent(product.category)}`} className="hover:underline capitalize">
+              {product.category}
+            </Link>
+          </>
+        )}
+      </nav>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Izquierda: galería */}
         <div>
