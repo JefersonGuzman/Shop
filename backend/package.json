@@ -17,6 +17,8 @@
     "db:categories": "ts-node src/scripts/initializeCategories.ts",
     "db:orders": "ts-node src/scripts/initializeOrders.ts",
     "db:offers": "ts-node src/scripts/initializeOffers.ts"
+  ,
+    "ip:egress": "node scripts/print-egress-ip.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
