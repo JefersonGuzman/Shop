@@ -38,11 +38,14 @@ export default function Checkout() {
         shippingAddress: { street, city, state, zipCode, country },
         paymentMethod,
       };
+      console.log('[Checkout] submit payload =', payload);
       const res = await http.post('/api/orders', payload);
+      console.log('[Checkout] response =', res.status, res.data);
       clear();
       navigate(`/`);
       setStatus(`Orden creada: #${res.data?.data?.orderNumber || ''}`);
     } catch (e: any) {
+      console.warn('[Checkout] error creating order:', e?.response?.status, e?.response?.data || e);
       const msg = e?.response?.data?.error || 'No se pudo procesar el pago';
       setStatus(msg);
     } finally {

@@ -34,7 +34,7 @@ export default function Register() {
       await axios.post(`${API_BASE}/api/auth/register`, { email, password, firstName, lastName });
       setMsg('Registro exitoso, redirigiendo a inicio de sesión...');
       setMsgType('success');
-      navigate('/login');
+      setTimeout(() => navigate('/login'), 1500);
     } catch {
       setMsg('Error registrando usuario');
       setMsgType('error');

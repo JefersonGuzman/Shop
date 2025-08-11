@@ -8,6 +8,9 @@ import { ProductModel } from '../models/Product';
 export class OrderController {
   async create(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
+      console.log('🧾 [Orders] create called');
+      console.log('   headers.authorization exists =', Boolean(req.headers?.authorization));
+      console.log('   body =', JSON.stringify(req.body));
       const currentUserId = (req.user as any)?.userId || (req.user as any)?.id;
       if (!currentUserId) {
         res.status(401).json({ error: 'No autenticado' });
@@ -66,8 +69,10 @@ export class OrderController {
         )
       );
 
+      console.log('✅ [Orders] created', { orderId: String(order._id), orderNumber: order.orderNumber });
       res.status(201).json({ success: true, data: { orderNumber: order.orderNumber, orderId: order._id } });
     } catch (error: any) {
+      console.error('❌ [Orders] create failed:', error?.message || error);
       res.status(400).json({ error: error.message || 'Bad request' });
     }
   }

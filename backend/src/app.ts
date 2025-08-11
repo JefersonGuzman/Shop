@@ -44,6 +44,16 @@ export function createApp(): Application {
   );
   app.use(compression());
   app.use(express.json({ limit: '1mb' }));
+  // Debug: simple request logger (only in development)
+  if (process.env.NODE_ENV !== 'production') {
+    app.use((req, _res, next) => {
+      const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
+      const bodyPreview = hasBody ? JSON.stringify(req.body).slice(0, 300) : '';
+      console.log(`➡️  [REQ] ${req.method} ${req.originalUrl}`);
+      if (bodyPreview) console.log(`   [BODY] ${bodyPreview}${bodyPreview.length === 300 ? '…' : ''}`);
+      next();
+    });
+  }
   // Archivos estáticos subidos (siempre desde backend/uploads)
   app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')));
 
@@ -61,6 +71,20 @@ export function createApp(): Application {
   app.use('/api/admin', adminRouter);
   app.use('/api/offers', offersRouter);
   app.use('/api/orders', ordersRouter);
+
+  // 404 handler with logging
+  app.use((req, res) => {
+    console.warn(`🛑 [404] ${req.method} ${req.originalUrl}`);
+    res.status(404).json({ error: 'Not Found' });
+  });
+
+  // Error handler with logging
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error('🔥 [ERROR]', err?.message || err);
+    if (err?.stack) console.error(err.stack);
+    res.status(err?.status || 500).json({ error: err?.message || 'Internal Server Error' });
+  });
 
   return app;
 }

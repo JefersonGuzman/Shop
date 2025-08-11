@@ -1,0 +1,33 @@
+# Node dependencies
+node_modules/
+
+# Logs and debug
+logs/
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs / coverage
+dist/
+build/
+coverage/
+.cache/
+tmp/
+temp/
+
+# Environment files
+.env*
+!.env.sample
+
+# Editor/OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Framework/tooling caches (safe to ignore if present)
+.turbo/
+.parcel-cache/
+.next/
+.vercel/

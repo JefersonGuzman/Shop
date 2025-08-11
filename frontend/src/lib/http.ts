@@ -1,6 +1,14 @@
 import axios from 'axios';
 
 const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:5000';
+// Debug: show API base once
+if (typeof window !== 'undefined') {
+  // Avoid spamming if hot reloading
+  if (!(window as any).__API_BASE_LOGGED__) {
+    console.log('[HTTP] baseURL =', API_BASE);
+    (window as any).__API_BASE_LOGGED__ = true;
+  }
+}
 
 export const http = axios.create({ baseURL: API_BASE });
 
@@ -12,6 +20,11 @@ http.interceptors.request.use((config) => {
     }
     (config.headers as any).Authorization = `Bearer ${token}`;
   }
+  // Debug
+  try {
+    const url = `${(config.baseURL || '')}${config.url || ''}`;
+    console.log('➡️  [HTTP] request', config.method?.toUpperCase(), url);
+  } catch {}
   return config;
 });
 
@@ -30,6 +43,11 @@ function redirectToLogin() {
 http.interceptors.response.use(
   (res) => res,
   async (error) => {
+    try {
+      const url = `${(error.config?.baseURL || '')}${error.config?.url || ''}`;
+      console.warn('⚠️  [HTTP] error', error.response?.status, error.response?.statusText, 'for', error.config?.method?.toUpperCase(), url);
+      if (error.response?.data) console.warn('   [HTTP] response body:', error.response.data);
+    } catch {}
     const original = error.config;
     const status = error.response?.status;
     const isRefreshEndpoint = typeof original?.url === 'string' && original.url.includes('/api/auth/refresh');
