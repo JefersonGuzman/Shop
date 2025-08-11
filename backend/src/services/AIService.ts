@@ -155,7 +155,6 @@ export class AIService {
 
     // Extraer presupuesto como número (ej: 2.500.000, 2500000, $2,5M)
     let budgetMax: number | undefined;
-    let budgetMax: number | undefined;
     const budgetRegex = /(?:presupuesto|budget|precio|price|valor|costo|cuestan|hasta|maximo|máximo|unos|entre|de|los)\s*:?\s*\$?\s*([\d.,]+(?:\s*mil|\s*k|\s*millones|\s*millon)?)/i;
     const budgetMatch = normalized.match(budgetRegex);
 
