@@ -11,6 +11,7 @@ const offer_1 = require("../schemas/offer");
 const router = (0, express_1.Router)();
 const controller = new OfferController_1.default();
 router.get('/', controller.list.bind(controller));
+router.get('/active', controller.active.bind(controller));
 router.post('/', auth_1.authenticateToken, auth_1.requireStaff, (0, validation_1.validateBody)(offer_1.OfferCreateSchema), controller.create.bind(controller));
 router.put('/:id', auth_1.authenticateToken, auth_1.requireStaff, (0, validation_1.validateBody)(offer_1.OfferUpdateSchema), controller.update.bind(controller));
 router.delete('/:id', auth_1.authenticateToken, auth_1.requireStaff, controller.remove.bind(controller));

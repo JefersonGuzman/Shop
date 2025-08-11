@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProductService = void 0;
 const Product_1 = require("../models/Product");
+const mongoose_1 = require("mongoose");
 class ProductService {
     static async getProducts(query) {
         const { brand, category, minPrice, maxPrice, inStock, page = 1, limit = 20, sortBy = 'name', sortOrder = 'asc', search, } = query;
@@ -23,6 +24,19 @@ class ProductService {
             Product_1.ProductModel.countDocuments(filter),
         ]);
         return { products: products, total };
+    }
+    static async getById(id) {
+        // Buscar por ObjectId si es válido
+        if ((0, mongoose_1.isValidObjectId)(id)) {
+            const byId = await Product_1.ProductModel.findById(id).lean();
+            if (byId)
+                return byId;
+        }
+        // Fallback: permitir buscar por SKU
+        const bySku = await Product_1.ProductModel.findOne({ sku: id }).lean();
+        if (bySku)
+            return bySku;
+        return null;
     }
     static async createProduct(data) {
         console.log('🔎 [Products] checking SKU:', data.sku);

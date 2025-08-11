@@ -31,6 +31,24 @@ export class ProductController {
     }
   }
 
+  async getProductById(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params as { id: string };
+      if (!id) {
+        res.status(400).json({ error: 'Product id requerido' });
+        return;
+      }
+      const product = await ProductService.getById(id);
+      if (!product) {
+        res.status(404).json({ error: 'Producto no encontrado' });
+        return;
+      }
+      res.json({ success: true, data: product });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Server error' });
+    }
+  }
+
   async searchProducts(req: Request, res: Response): Promise<void> {
     try {
       const { q, ...rest } = req.query as any;

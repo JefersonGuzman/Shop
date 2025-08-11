@@ -6,16 +6,25 @@ const OfferBaseSchema = z.object({
   image: z.string().optional(),
   discountPercent: z.number().min(0).max(100).optional(),
   priceOff: z.number().min(0).optional(),
-  productIds: z.array(z.string().min(1)),
+  productIds: z.array(z.string().min(1)).default([]),
   startsAt: z.string().datetime().optional(),
   endsAt: z.string().datetime().optional(),
   isActive: z.boolean().optional(),
+  // Campos para banner
+  eyebrow: z.string().optional(),
+  headline: z.string().optional(),
+  subheadline: z.string().optional(),
+  ctaLabel: z.string().optional(),
+  ctaTo: z.string().optional(),
+  layout: z.enum(['image-right', 'image-left']).optional(),
+  bgColor: z.string().optional(),
+  textColor: z.string().optional(),
 });
 
 export const OfferCreateSchema = OfferBaseSchema.refine(
-  (data) => data.discountPercent !== undefined || data.priceOff !== undefined,
+  (data) => (data.discountPercent !== undefined || data.priceOff !== undefined) && !(data.discountPercent !== undefined && data.priceOff !== undefined),
   {
-    message: 'Debe especificar discountPercent o priceOff',
+    message: 'Debe especificar solo uno: discountPercent o priceOff',
   }
 );
 
@@ -26,9 +35,17 @@ export const OfferUpdateSchema = z.object({
   discountPercent: z.number().min(0).max(100).optional(),
   priceOff: z.number().min(0).optional(),
   productIds: z.array(z.string().min(1)).optional(),
-  startsAt: z.string().datetime().optional(),
-  endsAt: z.string().datetime().optional(),
+  startsAt: z.string().optional(),
+  endsAt: z.string().optional(),
   isActive: z.boolean().optional(),
+  eyebrow: z.string().optional(),
+  headline: z.string().optional(),
+  subheadline: z.string().optional(),
+  ctaLabel: z.string().optional(),
+  ctaTo: z.string().optional(),
+  layout: z.enum(['image-right', 'image-left']).optional(),
+  bgColor: z.string().optional(),
+  textColor: z.string().optional(),
 }).refine(
   (data) => {
     // If both fields are provided, that's invalid

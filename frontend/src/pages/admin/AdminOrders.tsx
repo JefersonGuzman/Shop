@@ -48,7 +48,7 @@ const initialFormState = {
 function StatusBadge({ status }: { status: Order['status'] }) {
   const statusConfig = {
     pending: { label: 'Pendiente', classes: 'bg-yellow-100 text-yellow-800', icon: Calendar },
-    confirmed: { label: 'Confirmado', classes: 'bg-blue-100 text-blue-800', icon: CreditCard },
+    confirmed: { label: 'Confirmado', classes: 'bg-gray-100 text-gray-800', icon: CreditCard },
     processing: { label: 'Procesando', classes: 'bg-purple-100 text-purple-800', icon: Package },
     shipped: { label: 'Enviado', classes: 'bg-indigo-100 text-indigo-800', icon: Truck },
     delivered: { label: 'Entregado', classes: 'bg-green-100 text-green-800', icon: CreditCard },
@@ -434,7 +434,7 @@ export default function AdminOrders() {
                     <span className="text-sm text-mutedText">{error}</span>
                     <button 
                       onClick={fetchOrders}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                      className="px-4 py-2 bg-black text-white rounded-lg hover:bg-black/90 transition-colors"
                     >
                       Reintentar
                     </button>
@@ -452,7 +452,7 @@ export default function AdminOrders() {
                     <span className="text-sm text-mutedText">Aún no se han creado órdenes en el sistema</span>
                     <button 
                       onClick={() => window.location.href = '/admin/products'}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                      className="px-4 py-2 bg-black text-white rounded-lg hover:bg-black/90 transition-colors"
                     >
                       Ver Productos
                     </button>
@@ -486,14 +486,14 @@ export default function AdminOrders() {
                   </td>
                   <td className="py-2 px-3 space-x-2">
                     <button 
-                      className="text-mutedText hover:text-blue-600" 
+                      className="text-mutedText hover:text-black" 
                       onClick={() => setSelectedOrder(order)}
                       title="Ver detalles"
                     >
                       <CreditCard size={16} />
                     </button>
                     <button 
-                      className="text-mutedText hover:text-primary" 
+                      className="text-mutedText hover:text-black" 
                       onClick={() => openEditForm(order)}
                       disabled={loading}
                       title="Editar"
@@ -605,7 +605,7 @@ export default function AdminOrders() {
                 </button>
                 <button 
                   type="submit" 
-                  className="h-11 px-6 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="h-11 px-6 inline-flex items-center justify-center gap-2 rounded-lg bg-black text-white hover:bg-black/90 disabled:opacity-50 transition-colors"
                   disabled={loading}
                 >
                   {loading ? (

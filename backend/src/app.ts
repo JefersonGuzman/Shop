@@ -16,8 +16,31 @@ export function createApp(): Application {
   const app = express();
 
   // Middlewares base
-  app.use(helmet());
-  app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+  app.use(
+    helmet({
+      // Permitir carga/consumo cross-origin de recursos como beacons desde el frontend (5173)
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      // Evitar bloqueos de ventanas/herramientas en dev
+      crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    })
+  );
+  // CORS con credenciales para frontend local
+  const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim());
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        const isAllowed = allowedOrigins.includes(origin);
+        callback(isAllowed ? null : new Error('Not allowed by CORS'), isAllowed);
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      exposedHeaders: ['Content-Type']
+    })
+  );
   app.use(compression());
   app.use(express.json({ limit: '1mb' }));
   // Archivos estáticos subidos (siempre desde backend/uploads)

@@ -79,7 +79,11 @@ export default function Settings() {
           <input type="number" step="0.1" value={temperature} onChange={(e) => setTemperature(Number(e.target.value))} />
         </label>
         <button onClick={save}>Guardar</button>
-        {status && <p>{status}</p>}
+        {status && (
+          <p style={{ color: status.toLowerCase().includes('error') ? '#dc2626' : '#16a34a' }}>
+            {status}
+          </p>
+        )}
       </div>
     </div>
   );

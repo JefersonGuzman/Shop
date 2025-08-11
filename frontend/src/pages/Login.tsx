@@ -8,6 +8,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
+  const [msgType, setMsgType] = useState<'success' | 'error' | null>(null);
   const navigate = useNavigate();
 
   async function submit() {
@@ -18,6 +19,7 @@ export default function Login() {
       // Disparar evento para que Header refresque rol
       window.dispatchEvent(new StorageEvent('storage'));
       setMsg('Inicio de sesión exitoso');
+      setMsgType('success');
       // Redirigir según rol
       const me = await axios.get(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${res.data?.accessToken}` } });
       const role = me.data?.user?.role || 'customer';
@@ -25,13 +27,14 @@ export default function Login() {
       navigate(role === 'admin' || role === 'employee' ? '/admin' : '/');
     } catch (e: any) {
       setMsg('Credenciales inválidas');
+      setMsgType('error');
     }
   }
 
   return (
     <div className="min-h-[calc(100vh-56px)] grid md:grid-cols-2 bg-background">
       {/* Izquierda: imagen */}
-      <div className="hidden md:block bg-cover bg-center" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1518779578993-ec3579fee39f?q=80&w=1600&auto=format&fit=crop)' }} />
+      <div className="hidden md:block bg-cover bg-center" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1600&auto=format&fit=crop)' }} />
       {/* Derecha: fondo blanco completo sin tarjeta */}
       <div className="bg-white flex flex-col items-center justify-center px-6 py-10">
         <div className="w-full max-w-md">
@@ -57,7 +60,11 @@ export default function Login() {
             <button onClick={submit} className="w-full h-10 rounded-md bg-black text-white font-medium">
               Entrar
             </button>
-            {msg && <p className="text-mutedText text-sm">{msg}</p>}
+            {msg && (
+              <p className={`text-sm ${msgType === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+                {msg}
+              </p>
+            )}
           </div>
 
           {/* Bloque inferior similar a referencia */}

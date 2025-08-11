@@ -8,6 +8,9 @@ export interface AIConfigDocument extends Document {
   temperature: number;
   isActive: boolean;
   status: 'active' | 'inactive' | 'error';
+  stopwords?: string[];
+  clarifyBeforeRecommend?: boolean;
+  clarifyMaxQuestions?: number;
 }
 
 const aiConfigSchema = new Schema<AIConfigDocument>(
@@ -19,6 +22,9 @@ const aiConfigSchema = new Schema<AIConfigDocument>(
     temperature: { type: Number, default: 0.7 },
     isActive: { type: Boolean, default: true },
     status: { type: String, enum: ['active', 'inactive', 'error'], default: 'inactive' },
+    stopwords: { type: [String], default: [] },
+    clarifyBeforeRecommend: { type: Boolean, default: true },
+    clarifyMaxQuestions: { type: Number, default: 3 },
   },
   { timestamps: true }
 );

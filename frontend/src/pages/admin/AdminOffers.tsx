@@ -24,7 +24,7 @@ const initialFormState = {
   title: '',
   description: '',
   image: '',
-  discountPercent: 10,
+  discountPercent: undefined as number | undefined,
   priceOff: undefined,
   productIds: [],
   startsAt: '',
@@ -265,7 +265,25 @@ export default function AdminOffers() {
         if (upJson.error) throw new Error(upJson.error?.message || 'Error al subir imagen');
         imageUrl = upJson.secure_url as string;
       }
-      const payload = { ...form, image: imageUrl } as any;
+      // Normalizar fechas: si están vacías, enviarlas como undefined; si existen, convertir a ISO
+      const startsAtIso = form.startsAt && form.startsAt.trim() ? new Date(form.startsAt).toISOString() : undefined;
+      const endsAtIso = form.endsAt && form.endsAt.trim() ? new Date(form.endsAt).toISOString() : undefined;
+
+      const payload = {
+        ...form,
+        image: imageUrl,
+        startsAt: startsAtIso,
+        endsAt: endsAtIso,
+      } as any;
+
+      // Asegurar exclusividad de descuento y que exista al menos uno
+      if (payload.priceOff) payload.discountPercent = undefined;
+      if (payload.discountPercent) payload.priceOff = undefined;
+      if (payload.discountPercent === undefined && payload.priceOff === undefined) {
+        setFormError('Debe especificar discountPercent o priceOff');
+        setLoading(false);
+        return;
+      }
       if (editing) {
         await http.put(`${API_BASE}/api/offers/${editing._id}`, payload);
         showToast('Oferta actualizada exitosamente.', 'success');
@@ -277,8 +295,13 @@ export default function AdminOffers() {
       fetchOffers();
     } catch (err) {
       if (err instanceof AxiosError) {
-        setFormError(err.response?.data?.message || 'Error al procesar la solicitud.');
+        // Log detallado en consola para depuración
+        // eslint-disable-next-line no-console
+        console.error('[Offers] submit error:', err.response?.data || err.message);
+        setFormError((err.response?.data as any)?.error || (err.response?.data as any)?.message || 'Error al procesar la solicitud.');
       } else {
+        // eslint-disable-next-line no-console
+        console.error('[Offers] unexpected error:', err);
         setFormError('Error inesperado.');
       }
     } finally {
@@ -426,7 +449,7 @@ export default function AdminOffers() {
                     <StatusBadge isActive={offer.isActive} startsAt={offer.startsAt} endsAt={offer.endsAt} />
                   </td>
                   <td className="py-2 px-3 space-x-2">
-                    <button className="text-mutedText hover:text-primary" onClick={() => openEditForm(offer)} disabled={loading}>
+                    <button className="text-mutedText hover:text-black" onClick={() => openEditForm(offer)} disabled={loading}>
                       <Edit size={16} />
                     </button>
                     <button className="text-mutedText hover:text-red-600" onClick={() => setDeletingId(offer._id)} disabled={loading}>
@@ -524,7 +547,7 @@ export default function AdminOffers() {
                     <input 
                       type="number" 
                       id="discountPercent" 
-                      className="h-11 w-full pr-8 px-3 rounded-lg border border-border bg-surface focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                    className={`h-11 w-full pr-8 px-3 rounded-lg border border-border bg-surface focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${form.priceOff ? 'opacity-60' : ''}`}
                       value={form.discountPercent || ''}
                       onChange={(e) => {
                         const value = parseFloat(e.target.value) || undefined;
@@ -535,6 +558,7 @@ export default function AdminOffers() {
                       max="100"
                       step="0.1"
                       placeholder="20"
+                    disabled={!!form.priceOff}
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-mutedText">%</span>
                   </div>
@@ -549,7 +573,7 @@ export default function AdminOffers() {
                     <input 
                       type="number" 
                       id="priceOff" 
-                      className="h-11 w-full pl-8 pr-3 rounded-lg border border-border bg-surface focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                    className={`h-11 w-full pl-8 pr-3 rounded-lg border border-border bg-surface focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${form.discountPercent ? 'opacity-60' : ''}`}
                       value={form.priceOff || ''}
                       onChange={(e) => {
                         const value = parseFloat(e.target.value) || undefined;
@@ -559,6 +583,7 @@ export default function AdminOffers() {
                       min="0"
                       step="0.01"
                       placeholder="500"
+                    disabled={!!form.discountPercent}
                     />
                   </div>
                 </div>

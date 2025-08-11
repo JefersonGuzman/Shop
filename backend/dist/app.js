@@ -19,8 +19,28 @@ const brands_1 = __importDefault(require("./routes/brands"));
 function createApp() {
     const app = (0, express_1.default)();
     // Middlewares base
-    app.use((0, helmet_1.default)());
-    app.use((0, cors_1.default)({ origin: process.env.CORS_ORIGIN || '*' }));
+    app.use((0, helmet_1.default)({
+        // Permitir carga/consumo cross-origin de recursos como beacons desde el frontend (5173)
+        crossOriginResourcePolicy: { policy: 'cross-origin' },
+        // Evitar bloqueos de ventanas/herramientas en dev
+        crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    }));
+    // CORS con credenciales para frontend local
+    const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+        .split(',')
+        .map((o) => o.trim());
+    app.use((0, cors_1.default)({
+        origin: (origin, callback) => {
+            if (!origin)
+                return callback(null, true);
+            const isAllowed = allowedOrigins.includes(origin);
+            callback(isAllowed ? null : new Error('Not allowed by CORS'), isAllowed);
+        },
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+        exposedHeaders: ['Content-Type']
+    }));
     app.use((0, compression_1.default)());
     app.use(express_1.default.json({ limit: '1mb' }));
     // Archivos estáticos subidos (siempre desde backend/uploads)

@@ -20,6 +20,14 @@ export interface OfferDocument extends Document {
   priority: number;
   conditions?: string;
   terms?: string;
+  eyebrow?: string;
+  headline?: string;
+  subheadline?: string;
+  ctaLabel?: string;
+  ctaTo?: string;
+  layout?: 'image-right' | 'image-left';
+  bgColor?: string;
+  textColor?: string;
 }
 
 const offerSchema = new Schema<OfferDocument>(
@@ -102,6 +110,14 @@ const offerSchema = new Schema<OfferDocument>(
       type: String, 
       trim: true 
     },
+    eyebrow: { type: String, trim: true },
+    headline: { type: String, trim: true },
+    subheadline: { type: String, trim: true },
+    ctaLabel: { type: String, trim: true },
+    ctaTo: { type: String, trim: true },
+    layout: { type: String, enum: ['image-right', 'image-left'], default: 'image-right' },
+    bgColor: { type: String, trim: true, default: '#f7f7fb' },
+    textColor: { type: String, trim: true, default: '#0a0a0a' },
   },
   { timestamps: true }
 );

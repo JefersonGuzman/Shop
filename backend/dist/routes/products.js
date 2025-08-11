@@ -43,6 +43,7 @@ const router = (0, express_1.Router)();
 const controller = new ProductController_1.ProductController();
 router.get('/', (0, validation_1.validateQuery)(product_1.ProductQuerySchema), controller.getProducts.bind(controller));
 router.get('/search', controller.searchProducts.bind(controller));
+router.get('/:id', controller.getProductById.bind(controller));
 router.post('/', auth_1.authenticateToken, auth_1.requireStaff, (0, validation_1.validateBody)(product_1.ProductCreateSchema), controller.createProduct.bind(controller));
 router.put('/:id', auth_1.authenticateToken, auth_1.requireStaff, (0, validation_1.validateBody)(product_1.ProductUpdateSchema), controller.updateProduct.bind(controller));
 router.delete('/:id', auth_1.authenticateToken, auth_1.requireStaff, controller.deleteProduct.bind(controller));

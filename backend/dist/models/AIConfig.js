@@ -10,6 +10,9 @@ const aiConfigSchema = new mongoose_1.Schema({
     temperature: { type: Number, default: 0.7 },
     isActive: { type: Boolean, default: true },
     status: { type: String, enum: ['active', 'inactive', 'error'], default: 'inactive' },
+    stopwords: { type: [String], default: [] },
+    clarifyBeforeRecommend: { type: Boolean, default: true },
+    clarifyMaxQuestions: { type: Number, default: 3 },
 }, { timestamps: true });
 aiConfigSchema.index({ provider: 1, isActive: 1 });
 exports.AIConfigModel = (0, mongoose_1.model)('AIConfig', aiConfigSchema);

@@ -1,4 +1,5 @@
 import { ProductModel } from '../models/Product';
+import { isValidObjectId } from 'mongoose';
 import type { ProductDocument } from '../models/Product';
 import type { ProductQueryDTO, ProductCreateDTO, ProductUpdateDTO } from '../schemas/product';
 
@@ -36,6 +37,18 @@ export class ProductService {
     ]);
 
     return { products: products as unknown as ProductDocument[], total };
+  }
+
+  static async getById(id: string): Promise<ProductDocument | null> {
+    // Buscar por ObjectId si es válido
+    if (isValidObjectId(id)) {
+      const byId = await ProductModel.findById(id).lean();
+      if (byId) return byId as unknown as ProductDocument | null;
+    }
+    // Fallback: permitir buscar por SKU
+    const bySku = await ProductModel.findOne({ sku: id }).lean();
+    if (bySku) return bySku as unknown as ProductDocument | null;
+    return null;
   }
 
   static async createProduct(data: ProductCreateDTO): Promise<ProductDocument> {

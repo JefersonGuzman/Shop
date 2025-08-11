@@ -2,11 +2,23 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import Home from './pages/Home.tsx'
+import ProductDetail from './pages/ProductDetail.tsx'
+import CartPage from './pages/Cart.tsx'
+import HelpCenter from './pages/HelpCenter.tsx'
+import Returns from './pages/Returns.tsx'
+import Contact from './pages/Contact.tsx'
+import Terms from './pages/Terms.tsx'
+import Privacy from './pages/Privacy.tsx'
+import Cookies from './pages/Cookies.tsx'
 import Settings from './pages/Settings.tsx'
 import Login from './pages/Login.tsx'
 import Register from './pages/Register.tsx'
 import Header from './components/Header.tsx'
+import Footer from './components/Footer.tsx'
+import ChatBubble from './components/ChatBubble.tsx'
+import CartBubble from './components/CartBubble.tsx'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { CartProvider } from './context/CartContext'
 import ProtectedRoute from './components/ProtectedRoute.tsx'
 import AdminLayout from './pages/admin/AdminLayout.tsx'
 import AdminDashboard from './pages/admin/AdminDashboard.tsx'
@@ -21,38 +33,51 @@ import AdminBrands from './pages/admin/AdminBrands.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <Header />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute requireAdmin>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="offers" element={<AdminOffers />} />
+    <CartProvider>
+      <BrowserRouter>
+        <Header />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/help" element={<HelpCenter />} />
+          <Route path="/returns" element={<Returns />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/cookies" element={<Cookies />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route
-            path="users"
+            path="/admin"
             element={
-              <RequireRoles allowed={['admin']}>
-                <AdminUsers />
-              </RequireRoles>
+              <ProtectedRoute requireAdmin>
+                <AdminLayout />
+              </ProtectedRoute>
             }
-          />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="categories" element={<AdminCategories />} />
-          <Route path="brands" element={<AdminBrands />} />
-          <Route path="*" element={<AccessDenied />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="offers" element={<AdminOffers />} />
+            <Route
+              path="users"
+              element={
+                <RequireRoles allowed={['admin']}>
+                  <AdminUsers />
+                </RequireRoles>
+              }
+            />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="categories" element={<AdminCategories />} />
+            <Route path="brands" element={<AdminBrands />} />
+            <Route path="*" element={<AccessDenied />} />
+          </Route>
+        </Routes>
+        <Footer />
+        <ChatBubble />
+        <CartBubble />
+      </BrowserRouter>
+    </CartProvider>
   </StrictMode>,
 )

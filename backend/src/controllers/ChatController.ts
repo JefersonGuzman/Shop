@@ -45,10 +45,10 @@ export class ChatController {
         supportHours: 'Lun-Sáb 9AM-8PM, Dom 10AM-6PM',
       };
 
-      // Obtener o crear sesión (asociar al usuario si existe)
+      // Obtener o crear sesión
       let session = await ChatSessionModel.findOne({ sessionId });
       if (!session) {
-        session = await ChatSessionModel.create({ sessionId, messages: [], isActive: true, userId: req.user?.id });
+        session = await ChatSessionModel.create({ sessionId, messages: [], isActive: true });
       }
 
       // Guardar mensaje del usuario
@@ -148,50 +148,18 @@ export class ChatController {
     res.json({ success: true, data: session?.messages ?? [] });
   }
 
-  async listSessions(req: Request, res: Response): Promise<void> {
-    const limit = Math.max(1, Math.min(10, Number(req.query.limit || 3)));
-    const idsParam = String(req.query.ids || '').trim();
-    const ids = idsParam ? idsParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
-
-    let criteria: any = {};
-    // Si hay usuario autenticado, listar por userId
-    const maybeUser = (req as any).user as { id?: string } | undefined;
-    if (maybeUser?.id) {
-      criteria.userId = maybeUser.id;
-    } else if (ids.length > 0) {
-      // Si no hay usuario, pero nos pasan sessionIds, limitar a esos
-      criteria.sessionId = { $in: ids };
-    } else {
-      // Sin usuario ni ids, no exponemos sesiones
-      res.json({ success: true, data: [] });
-      return;
+  async closeSession(req: Request, res: Response): Promise<void> {
+    try {
+      const sessionId = String((req.query.sessionId as any) || (req.body as any)?.sessionId || '');
+      if (!sessionId) {
+        res.status(400).json({ error: 'sessionId requerido' });
+        return;
+      }
+      await ChatSessionModel.deleteOne({ sessionId });
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || 'Bad request' });
     }
-
-    const sessions = await ChatSessionModel.find(criteria)
-      .sort({ updatedAt: -1 })
-      .limit(limit)
-      .select('sessionId createdAt updatedAt messages')
-      .lean();
-
-    const data = sessions.map((s: any) => ({
-      sessionId: s.sessionId,
-      createdAt: s.createdAt,
-      updatedAt: s.updatedAt,
-      lastMessage: Array.isArray(s.messages) && s.messages.length > 0 ? s.messages[s.messages.length - 1].content : ''
-    }));
-
-    res.json({ success: true, data });
-  }
-
-  async deleteSession(req: Request, res: Response): Promise<void> {
-    const sessionId = String((req.query.sessionId || (req.body as any)?.sessionId || '')).trim();
-    if (!sessionId) {
-      res.status(400).json({ error: 'sessionId requerido' });
-      return;
-    }
-
-    await ChatSessionModel.deleteOne({ sessionId });
-    res.json({ success: true });
   }
 }
 

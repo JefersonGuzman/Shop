@@ -16,6 +16,7 @@ type Props = {
 
 export default function SideMenu({ open, onClose, role, onLogout }: Props) {
   const [categories, setCategories] = useState<string[]>([]);
+  const [offers, setOffers] = useState<Array<{ _id: string; title: string; image?: string }>>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,6 +29,18 @@ export default function SideMenu({ open, onClose, role, onLogout }: Props) {
         setCategories(cats);
       })
       .catch(() => setCategories([]));
+
+    axios
+      .get(`${API_BASE}/api/offers/active`)
+      .then((res) => setOffers((res.data?.data || []).slice(0, 3)))
+      .catch(async () => {
+        try {
+          const res = await axios.get(`${API_BASE}/api/offers`);
+          setOffers((res.data?.data || []).slice(0, 3));
+        } catch {
+          setOffers([]);
+        }
+      });
   }, [open]);
 
   function goToCategory(cat: string) {
@@ -77,15 +90,25 @@ export default function SideMenu({ open, onClose, role, onLogout }: Props) {
         </div>
         
         <nav className="flex-1 overflow-y-auto">
-          {/* Ofertas TOP */}
-          <div className="p-4 border-b border-border">
-            <Link to="/ofertas" className="flex items-center justify-between text-orange-600 font-semibold hover:text-orange-700 transition-colors">
-              <span>Ofertas TOP -50%</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
+          {/* Ofertas (desde BD) */}
+          {offers.length > 0 && (
+            <div className="p-4 border-b border-border">
+              <h3 className="text-sm font-semibold text-mutedText mb-3 uppercase tracking-wide">Ofertas</h3>
+              <div className="space-y-2">
+                {offers.map((o) => (
+                  <Link key={o._id} to={`/`} className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-black/5 transition-colors" onClick={onClose}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-full border border-border bg-center bg-cover flex-shrink-0" style={{ backgroundImage: `url(${o.image || ''})` }} />
+                      <span className="truncate">{o.title}</span>
+                    </div>
+                    <svg className="w-4 h-4 text-mutedText" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Categorías */}
           <div className="p-4">

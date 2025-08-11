@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 import App from '../App';
 import Portal from './Portal';
 import { useEffect, useState, useRef } from 'react';
@@ -10,6 +11,7 @@ type Role = 'admin' | 'employee' | 'customer' | null;
 
 export default function Header() {
   const navigate = useNavigate();
+  const { totalQuantity } = useCart();
   const [role, setRole] = useState<Role>(null);
   // const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -182,7 +184,7 @@ export default function Header() {
           <Link to="/cart" className="relative flex items-center gap-1 text-xs">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 6h15l-1.5 9h-12z" stroke="currentColor" strokeWidth="2"/><circle cx="9" cy="20" r="1.5" fill="currentColor"/><circle cx="18" cy="20" r="1.5" fill="currentColor"/></svg>
             Mi cesta
-            <span className="absolute -top-2 -right-2 text-xs bg-red-600 text-white rounded-full px-1">0</span>
+            <span className="absolute -top-2 -right-2 text-xs bg-red-600 text-white rounded-full px-1">{totalQuantity}</span>
           </Link>
         </div>
       </div>

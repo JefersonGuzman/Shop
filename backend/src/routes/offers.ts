@@ -8,6 +8,7 @@ const router = Router();
 const controller = new OfferController();
 
 router.get('/', controller.list.bind(controller));
+router.get('/active', controller.active.bind(controller));
 router.post('/', authenticateToken, requireStaff, validateBody(OfferCreateSchema), controller.create.bind(controller));
 router.put('/:id', authenticateToken, requireStaff, validateBody(OfferUpdateSchema), controller.update.bind(controller));
 router.delete('/:id', authenticateToken, requireStaff, controller.remove.bind(controller));

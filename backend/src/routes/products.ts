@@ -11,6 +11,7 @@ const controller = new ProductController();
 
 router.get('/', validateQuery(ProductQuerySchema), controller.getProducts.bind(controller));
 router.get('/search', controller.searchProducts.bind(controller));
+router.get('/:id', controller.getProductById.bind(controller));
 router.post('/', authenticateToken, requireStaff, validateBody(ProductCreateSchema), controller.createProduct.bind(controller));
 router.put('/:id', authenticateToken, requireStaff, validateBody(ProductUpdateSchema), controller.updateProduct.bind(controller));
 router.delete('/:id', authenticateToken, requireStaff, controller.deleteProduct.bind(controller));

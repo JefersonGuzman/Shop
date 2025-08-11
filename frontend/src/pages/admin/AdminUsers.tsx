@@ -36,7 +36,7 @@ type EditingUser = {
 function RoleBadge({ role }: { role: UserType['role'] }) {
   const roleConfig = {
     admin: { label: 'Administrador', classes: 'bg-red-100 text-red-800', icon: Shield },
-    employee: { label: 'Empleado', classes: 'bg-blue-100 text-blue-800', icon: User },
+    employee: { label: 'Empleado', classes: 'bg-gray-100 text-gray-800', icon: User },
     customer: { label: 'Cliente', classes: 'bg-gray-100 text-gray-800', icon: User },
   };
 
@@ -289,7 +289,7 @@ export default function AdminUsers() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Gestión de Usuarios</h1>
         <button 
-          className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className="h-9 px-4 inline-flex items-center justify-center gap-2 rounded-md bg-black text-white hover:bg-black/90 disabled:opacity-50"
           onClick={openCreateForm} 
           disabled={loading}
         >
@@ -351,11 +351,11 @@ export default function AdminUsers() {
                     <StatusBadge isActive={user.isActive} />
                   </td>
                   <td className="py-2 px-3 space-x-2">
-                    <button className="text-mutedText hover:text-primary" onClick={() => openEditForm(user)} disabled={loading}>
+                    <button className="text-mutedText hover:text-black" onClick={() => openEditForm(user)} disabled={loading}>
                       <Edit size={16} />
                     </button>
                     <button 
-                      className="text-mutedText hover:text-blue-600" 
+                      className="text-mutedText hover:text-black" 
                       onClick={() => toggleActive(user)} 
                       disabled={loading}
                       title={user.isActive ? 'Desactivar' : 'Activar'}
@@ -489,7 +489,7 @@ export default function AdminUsers() {
                 </button>
                 <button 
                   type="submit" 
-                  className="h-11 px-6 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  className="h-11 px-6 inline-flex items-center justify-center gap-2 rounded-lg bg-black text-white hover:bg-black/90 disabled:opacity-50 transition-colors"
                   disabled={loading}
                 >
                   {loading ? (

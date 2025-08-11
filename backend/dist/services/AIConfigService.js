@@ -15,6 +15,9 @@ class AIConfigService {
             temperature: params.temperature ?? 0.7,
             isActive: true,
             status: 'active',
+            stopwords: params.stopwords ?? [],
+            clarifyBeforeRecommend: params.clarifyBeforeRecommend ?? true,
+            clarifyMaxQuestions: params.clarifyMaxQuestions ?? 3,
         });
     }
     static async getActiveConfig(provider) {

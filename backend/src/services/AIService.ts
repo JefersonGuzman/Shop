@@ -70,10 +70,11 @@ export class AIService {
     
     const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     
-    // Extraer tokens significativos del mensaje (español)
-    const stopwords = new Set<string>([
-      'hola','buenas','quiero','busco','necesito','me','para','por','de','del','la','el','los','las','un','una','unos','unas','que','con','sin','en','y','o','u','mi','su','sus','mis','tengo','hay','cual','cuál','cuales','cuáles','cualquier','como','cómo','mas','más','menos','segun','según','sobre','esto','ese','esa','este','estas','estos','esas','esos','uso','usar','sirve','sirven','nuevo','nueva','nuevos','nuevas','barato','barata','baratos','baratas','baratito','costoso','caro','cara','caros','caras','precio','presupuesto','maximo','máximo','hasta','aprox','aproximadamente','alrededor','entre','debo','podria','podría','ayuda','ayudame','ayúdame','ver','mostrar','muéstrame','muestrame'
-    ]);
+    // Extraer tokens significativos del mensaje usando stopwords desde configuración (sin datos quemados)
+    const configuredStopwordsArray = Array.isArray((cfg as any)?.stopwords)
+      ? ((cfg as any).stopwords as string[])
+      : [];
+    const stopwords = new Set<string>(configuredStopwordsArray.map((s) => s.toLowerCase().trim()));
     const tokens = (normalized.match(/[a-záéíóúüñ0-9]+/gi) || [])
       .map(t => t.trim())
       .filter(t => t.length >= 3 && !stopwords.has(t));
@@ -103,6 +104,7 @@ export class AIService {
       : Array.from(new Set(tokens));
     
     const categoryRegexParts: string[] = searchTerms.map(escapeRegex);
+    const productIntentTerms = searchTerms.slice(0, 5);
 
     // Extraer presupuesto como número (ej: 2.500.000, 2500000, $2,5M)
     let budgetMax: number | undefined;
@@ -198,6 +200,22 @@ export class AIService {
 
     const isFirstTurn = options?.isFirstTurn !== false; // default true si no se envía
 
+    // Bloque de clarificación configurable: hace exactamente N preguntas antes de recomendar si falta contexto
+    const clarifyBeforeRecommend = (cfg as any)?.clarifyBeforeRecommend !== false;
+    const clarifyMaxQuestions =
+      typeof (cfg as any)?.clarifyMaxQuestions === 'number' ? (cfg as any).clarifyMaxQuestions : 3;
+    const clarifyBlock = clarifyBeforeRecommend
+      ? `
+Reglas de Clarificación (si falta contexto esencial):
+- Si faltan datos clave para recomendar (al menos uno de: presupuesto máximo, uso previsto, marca preferida), primero haz EXACTAMENTE ${clarifyMaxQuestions} preguntas de desambiguación.
+- Precede la respuesta con la etiqueta [DISAMBIGUATION_PROMPT] para que el sistema la trate como clarificación.
+- Formula preguntas concisas y específicas, numeradas 1), 2), 3), y solicita que responda a todas en un solo mensaje.
+- Asegúrate de que las preguntas estén claramente relacionadas con el producto/tema detectado a partir de estos términos: ${productIntentTerms.join(', ') || '(sin términos)'}.
+- Basa las preguntas en características observables en el inventario listado (especificaciones, tamaño/capacidad, compatibilidad, accesorios, uso principal) y evita preguntas genéricas.
+- No recomiendes productos hasta recibir las respuestas a estas preguntas.
+`
+      : '';
+
     let systemPrompt = `
 # Makers Tech ChatBot - System Prompt (operativo)
 
@@ -214,6 +232,8 @@ Reglas críticas (obligatorias):
 - Da precios y disponibilidad concretos solo si existen en el inventario.
 - Resume brevemente y ofrece siguiente paso claro.
  - No repitas saludos. Solo saluda en el primer turno de la sesión. Si no es el primer turno, responde directo al punto sin "Hola" ni "Bienvenido".
+
+${clarifyBlock}
 
 Resumen del inventario actual:
 - Total de productos disponibles: ${total}

@@ -81,6 +81,14 @@ const offerSchema = new mongoose_1.Schema({
         type: String,
         trim: true
     },
+    eyebrow: { type: String, trim: true },
+    headline: { type: String, trim: true },
+    subheadline: { type: String, trim: true },
+    ctaLabel: { type: String, trim: true },
+    ctaTo: { type: String, trim: true },
+    layout: { type: String, enum: ['image-right', 'image-left'], default: 'image-right' },
+    bgColor: { type: String, trim: true, default: '#f7f7fb' },
+    textColor: { type: String, trim: true, default: '#0a0a0a' },
 }, { timestamps: true });
 // Índices para optimizar consultas
 offerSchema.index({ title: 1 });

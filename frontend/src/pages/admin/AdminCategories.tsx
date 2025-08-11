@@ -414,7 +414,7 @@ export default function AdminCategories() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => openEditForm(category)}
-                        className="text-mutedText hover:text-primary transition-colors"
+                        className="text-mutedText hover:text-black transition-colors"
                         title="Editar"
                       >
                         <Edit size={16} />

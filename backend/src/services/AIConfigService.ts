@@ -8,6 +8,9 @@ export class AIConfigService {
     modelName: string;
     maxTokens?: number;
     temperature?: number;
+    stopwords?: string[];
+    clarifyBeforeRecommend?: boolean;
+    clarifyMaxQuestions?: number;
   }): Promise<void> {
     const encryptedKey = encrypt(params.apiKey);
     await AIConfigModel.updateMany({ provider: params.provider, isActive: true }, { isActive: false });
@@ -19,6 +22,9 @@ export class AIConfigService {
       temperature: params.temperature ?? 0.7,
       isActive: true,
       status: 'active',
+      stopwords: params.stopwords ?? [],
+      clarifyBeforeRecommend: params.clarifyBeforeRecommend ?? true,
+      clarifyMaxQuestions: params.clarifyMaxQuestions ?? 3,
     });
   }
 

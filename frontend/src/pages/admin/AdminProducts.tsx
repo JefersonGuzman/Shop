@@ -566,7 +566,7 @@ export default function AdminProducts() {
                     <StockBadge stock={p.stock} />
                   </td>
                   <td className="py-2 px-3 space-x-2">
-                    <button className="text-mutedText hover:text-primary" onClick={() => openEditForm(p)} disabled={loading}><Edit size={16} /></button>
+                    <button className="text-mutedText hover:text-black" onClick={() => openEditForm(p)} disabled={loading}><Edit size={16} /></button>
                     <button className="text-mutedText hover:text-red-600" onClick={() => setDeletingId(p._id)} disabled={loading}><Trash2 size={16} /></button>
                   </td>
                 </tr>
