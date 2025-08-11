@@ -124,7 +124,7 @@ export class ChatController {
         content: responseContent,
         timestamp: new Date(),
         metadata: { 
-          productsReferenced: [], 
+          productsReferenced: (response as any)?.suggestedProducts || [], 
           actionType: responseActionType, 
           confidence: 0.7, 
           processingTime: Date.now() - start 

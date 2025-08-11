@@ -41,6 +41,7 @@ export default function AdminLayout() {
 
   const adminOnlyItems = [
     { to: '/admin/users', label: 'Empleados', icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12a4 4 0 100-8 4 4 0 000 8z" stroke="currentColor" strokeWidth="1.5"/><path d="M4 20a8 8 0 1116 0" stroke="currentColor" strokeWidth="1.5"/></svg>) },
+    { to: '/admin/settings', label: 'Ajustes', icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="currentColor" strokeWidth="1.5"/><path d="M2 12h2m14 0h2M12 2v2m0 16v2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19" stroke="currentColor" strokeWidth="1.5"/></svg>) },
   ];
 
   const itemsToRender = role === 'admin'

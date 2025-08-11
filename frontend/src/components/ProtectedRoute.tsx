@@ -61,7 +61,10 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Props
   }, [requireAdmin]);
 
   if (authorized === null) return <div style={{ padding: 24 }}>Cargando...</div>;
-  if (!authorized) return <Navigate to="/login" replace />;
+  if (!authorized) {
+    const next = typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '/';
+    return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />;
+  }
   return children;
 }
 

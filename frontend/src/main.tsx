@@ -32,6 +32,7 @@ import AccessDenied from './pages/AccessDenied.tsx'
 import AdminOrders from './pages/admin/AdminOrders.tsx'
 import AdminCategories from './pages/admin/AdminCategories.tsx'
 import AdminBrands from './pages/admin/AdminBrands.tsx'
+import AdminSettings from './pages/admin/AdminSettings.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -77,6 +78,14 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="categories" element={<AdminCategories />} />
                 <Route path="brands" element={<AdminBrands />} />
+                <Route
+                  path="settings"
+                  element={
+                    <RequireRoles allowed={['admin']}>
+                      <AdminSettings />
+                    </RequireRoles>
+                  }
+                />
                 <Route path="*" element={<AccessDenied />} />
               </Route>
             </Routes>

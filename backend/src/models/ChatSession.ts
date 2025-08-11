@@ -32,7 +32,7 @@ const chatSessionSchema = new Schema<ChatSessionDocument>(
           productsReferenced: [{ type: Schema.Types.ObjectId, ref: 'Product' }],
           actionType: {
             type: String,
-            enum: ['search', 'recommendation', 'comparison', 'info', 'general'],
+            enum: ['search', 'recommendation', 'comparison', 'info', 'general', 'disambiguation_prompt'],
           },
           confidence: { type: Number, min: 0, max: 1 },
           processingTime: Number,

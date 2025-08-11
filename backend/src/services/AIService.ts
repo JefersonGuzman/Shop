@@ -23,6 +23,9 @@ export class AIService {
     }
   ): Promise<LLMResponse> {
     const config = await AIConfigModel.findOne({ isActive: true }).sort({ updatedAt: -1 }).lean();
+
+    const assistantCount = (options?.history || []).filter((m) => m.role === 'assistant').length;
+    const isFirstTurn = assistantCount === 0;
     const provider: 'groq' | 'openai' = (config?.provider as any) || 'groq';
     
     try {
@@ -66,7 +69,13 @@ export class AIService {
     }
   ): Promise<LLMResponse> {
     // Heurísticas: derivar términos de búsqueda dinámicamente desde tags/categorías de productos, sin sinónimos quemados
-    const normalized = (message || '').toLowerCase();
+    const foldDiacritics = (value: string): string =>
+      (value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // eliminar tildes/diacríticos
+        .toLowerCase();
+
+    const normalized = foldDiacritics(message || '');
     
     const escapeRegex = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     
@@ -75,35 +84,73 @@ export class AIService {
       ? ((cfg as any).stopwords as string[])
       : [];
     const stopwords = new Set<string>(configuredStopwordsArray.map((s) => s.toLowerCase().trim()));
-    const tokens = (normalized.match(/[a-záéíóúüñ0-9]+/gi) || [])
+    const tokens = (normalized.match(/[a-z0-9]+/gi) || [])
       .map(t => t.trim())
       .filter(t => t.length >= 3 && !stopwords.has(t));
 
+    // Identificar saludos comunes para no tratarlos como términos de búsqueda cuando están solos
+    const greetingSet = new Set<string>(['hola', 'buenas', 'buenos', 'hello', 'hi', 'hey']);
+    const helpIntentSet = new Set<string>([
+      'apoyo', 'ayuda', 'soporte', 'soportetecnico', 'tecnico', 'técnico', 'reparacion', 'reparación',
+      'garantia', 'garantía', 'envio', 'envío', 'pedido', 'devolucion', 'devolución', 'cambio',
+      'factura', 'cotizacion', 'cotización', 'asesoria', 'asesoría', 'servicio'
+    ]);
+    const nonSearchSet = new Set<string>(['excel', 'word', 'office', 'ofimatica', 'ofimaticas']);
+    const meaningfulTokens = tokens.filter((t) => !greetingSet.has(t) && !nonSearchSet.has(t) && !helpIntentSet.has(t));
+
     // Consultar tags y categorías existentes en inventario activo para intersectar con tokens del usuario
-    const [existingTagsRaw, existingCategoriesRaw] = await Promise.all([
+    const [existingTagsRaw, existingCategoriesRaw, existingBrandsRaw] = await Promise.all([
       ProductModel.distinct('tags', { isActive: true, stock: { $gt: 0 } }),
-      ProductModel.distinct('category', { isActive: true, stock: { $gt: 0 } })
+      ProductModel.distinct('category', { isActive: true, stock: { $gt: 0 } }),
+      ProductModel.distinct('brand', { isActive: true, stock: { $gt: 0 } }),
     ]);
 
     const existingTags = (existingTagsRaw as unknown[])
       .map(v => (typeof v === 'string' ? v : ''))
       .filter(Boolean)
-      .map(v => v.toLowerCase().trim());
+      .map(v => foldDiacritics(v).trim());
     const existingCategories = (existingCategoriesRaw as unknown[])
       .map(v => (typeof v === 'string' ? v : ''))
       .filter(Boolean)
-      .map(v => v.toLowerCase().trim());
+      .map(v => foldDiacritics(v).trim());
+    const existingBrands = (existingBrandsRaw as unknown[])
+      .map(v => (typeof v === 'string' ? v : ''))
+      .filter(Boolean)
+      .map(v => foldDiacritics(v).trim());
 
     // Términos que existen en tags/categorías
-    const matchedFromTags = Array.from(new Set(existingTags.filter(tag => tokens.some(t => tag.includes(t) || t.includes(tag)))));
-    const matchedFromCategories = Array.from(new Set(existingCategories.filter(cat => tokens.some(t => cat.includes(t) || t.includes(cat)))));
+    const termBase = meaningfulTokens.length > 0 ? meaningfulTokens : tokens.filter((t) => !helpIntentSet.has(t));
+    const matchedFromTags = Array.from(new Set(existingTags.filter(tag => termBase.some(t => tag.includes(t) || t.includes(tag)))));
+    const matchedFromCategories = Array.from(new Set(existingCategories.filter(cat => termBase.some(t => cat.includes(t) || t.includes(cat)))));
+    const matchedFromBrands = Array.from(new Set(existingBrands.filter(brand => termBase.some(t => brand.includes(t) || t.includes(brand)))));
     
     // Si no hay intersección, usa tokens como términos de búsqueda genéricos
-    const searchTerms = (matchedFromTags.length + matchedFromCategories.length > 0)
-      ? Array.from(new Set([...matchedFromTags, ...matchedFromCategories]))
-      : Array.from(new Set(tokens));
+    const searchTerms = (matchedFromTags.length + matchedFromCategories.length + matchedFromBrands.length > 0)
+      ? Array.from(new Set([...matchedFromTags, ...matchedFromCategories, ...matchedFromBrands]))
+      : Array.from(new Set(meaningfulTokens));
+
+    const hasProductSignals = (matchedFromTags.length + matchedFromCategories.length + matchedFromBrands.length) > 0;
+
+    const hasHelpIntent = tokens.some((t) => helpIntentSet.has(t));
     
-    const categoryRegexParts: string[] = searchTerms.map(escapeRegex);
+    const toAccentInsensitiveRegex = (term: string): string => {
+      const map: Record<string, string> = {
+        a: '[aáàäâãå]',
+        e: '[eéèëê]',
+        i: '[iíìïî]',
+        o: '[oóòöôõ]',
+        u: '[uúùüû]',
+        n: '(?:n|ñ)'
+      };
+      return Array.from(term).map((ch) => {
+        const lower = ch.toLowerCase();
+        if (map[lower]) return map[lower];
+        // escape regex specials
+        return lower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }).join('');
+    };
+
+    const categoryRegexParts: string[] = searchTerms.map(toAccentInsensitiveRegex);
     const productIntentTerms = searchTerms.slice(0, 5);
 
     // Extraer presupuesto como número (ej: 2.500.000, 2500000, $2,5M)
@@ -127,6 +174,23 @@ export class AIService {
       ];
     }
     if (typeof budgetMax === 'number') invFilter.price = { $lte: budgetMax };
+
+    // Si no hay señales de producto y tampoco presupuesto ni ayuda explícita, tratamos como charla general
+    if (!hasProductSignals && typeof budgetMax !== 'number' && !tokens.some(t => helpIntentSet.has(t))) {
+      const sampleCategories = existingCategories.slice(0, 5).map((c) => `- ${c}`).join('\n') || '- (sin categorías)';
+      const sampleBrands = existingBrands.slice(0, 5).map((b) => `- ${b}`).join('\n') || '- (sin marcas)';
+      return {
+        content:
+          `${options?.isFirstTurn !== false ? 'Hola, ' : ''}puedo ayudarte a encontrar productos o darte soporte. Categorías comunes:\n${sampleCategories}\nMarcas destacadas:\n${sampleBrands}\n¿Sobre qué categoría o marca te gustaría que busque?`,
+        provider: 'rule',
+        model: 'chit-chat-redirect',
+        suggestedProducts: [],
+        followUpQuestions: [
+          '¿Qué categoría te interesa?',
+          '¿Alguna marca preferida?'
+        ],
+      };
+    }
 
     // Obtener inventario filtrado (máx 25 productos)
     if (process.env.LOG_LEVEL === 'debug') {
@@ -162,6 +226,56 @@ export class AIService {
 
     // Si no hay inventario, no llamamos al LLM. Respuesta determinística conservadora
     if (!inventory || inventory.length === 0) {
+      // Si no es el primer turno, permite que el modelo responda con el contexto del historial
+      const hadAssistantBefore = (options?.history || []).some((m) => m.role === 'assistant');
+      if (hadAssistantBefore) {
+        try {
+          const response = await this.generateWithProvider(
+            provider,
+            message,
+            cfg,
+            userContext,
+            currentPromotions,
+            storeStatus,
+            { history: options?.history, isFirstTurn: false }
+          );
+          return response;
+        } catch (e) {
+          // si falla, continúa con las respuestas determinísticas debajo
+        }
+      }
+      // Heurística: si no hay términos útiles (saludo, sólo stopwords), pide al usuario que aclare
+      const hasMeaningfulTerms = searchTerms.length > 0 || typeof budgetMax === 'number';
+      if (!hasMeaningfulTerms) {
+        return {
+          content:
+            `${options?.isFirstTurn !== false ? 'Hola, ' : ''}¿en qué puedo ayudarte? Puedo ayudarte a encontrar portátiles u otros productos. ¿Qué categoría o marca buscas y cuál es tu presupuesto aproximado?`,
+          provider: 'rule',
+          model: 'needs-clarification',
+          suggestedProducts: [],
+          followUpQuestions: [
+            '¿Buscas portátil, desktop, accesorios u otro?',
+            '¿Cuál es tu presupuesto máximo?',
+            '¿Alguna marca preferida?'
+          ],
+        };
+      }
+
+      // Si el usuario expresa intención de ayuda/soporte pero sin términos de producto, guiar a opciones de soporte
+      if (hasHelpIntent && searchTerms.length === 0 && typeof budgetMax !== 'number') {
+        return {
+          content:
+            'Claro, te ayudo. ¿Necesitas 1) soporte técnico de un equipo, 2) ayuda con un pedido (envío, devolución o garantía) o 3) una recomendación de compra? Responde con 1, 2 o 3 y te guío.',
+          provider: 'rule',
+          model: 'help-intent',
+          suggestedProducts: [],
+          followUpQuestions: [
+            'Soporte técnico',
+            'Pedido / envío / devolución / garantía',
+            'Recomendación de compra'
+          ],
+        };
+      }
       // Respuesta determinística específica si había términos o presupuesto
       const reasonParts: string[] = [];
       if (categoryRegexParts.length > 0) reasonParts.push(`según los términos "${searchTerms.slice(0, 3).join('/')}${searchTerms.length > 3 ? '/…' : ''}"`);
@@ -169,7 +283,7 @@ export class AIService {
       const reason = reasonParts.length > 0 ? ` ${reasonParts.join(' ')}` : '';
       return {
         content:
-          `Por el momento no encuentro productos disponibles${reason}. ¿Deseas ajustar la categoría o el presupuesto, o prefieres hablar con un asesor?`,
+          `Por el momento no encuentro productos disponibles${reason}. ¿Quieres que intentemos con otra categoría o ajustar el presupuesto?`,
         provider: 'rule',
         model: 'no-matches',
         suggestedProducts: [],
@@ -179,6 +293,12 @@ export class AIService {
         ],
       };
     }
+
+    // Construir candidatos sugeridos (IDs) según intención
+    const wantsGaming = /(juego|gaming|videojuego|gr(a|á)fica|gpu|render)/i.test(message);
+    const sortedInventory = [...inventory].sort((a: any, b: any) => wantsGaming ? (b.price - a.price) : (a.price - b.price));
+    const topCandidates = sortedInventory.slice(0, 3);
+    const candidateIds = topCandidates.map((p: any) => String(p._id || ''));
 
     // Construir resumen del inventario y reglas anti-alucinación
     const total = inventory.length;
@@ -271,9 +391,13 @@ Ahora responde a la consulta del usuario: "${message}"
       }
 
       if (provider === 'groq') {
-        return await this.generateWithGroq(systemPrompt, message, normalized.apiKey, normalized.model, normalized.temperature, normalized.maxTokens, options?.history);
+        const out = await this.generateWithGroq(systemPrompt, message, normalized.apiKey, normalized.model, normalized.temperature, normalized.maxTokens, options?.history);
+        out.suggestedProducts = candidateIds;
+        return out;
       } else if (provider === 'openai') {
-        return await this.generateWithOpenAI(systemPrompt, message, normalized.apiKey, normalized.model, normalized.temperature, normalized.maxTokens, options?.history);
+        const out = await this.generateWithOpenAI(systemPrompt, message, normalized.apiKey, normalized.model, normalized.temperature, normalized.maxTokens, options?.history);
+        out.suggestedProducts = candidateIds;
+        return out;
       }
 
       throw new Error(`Provider no soportado: ${provider}`);
