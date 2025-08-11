@@ -19,8 +19,7 @@ export default function OrdersPage() {
     (async () => {
       setLoading(true);
       try {
-        // Reutilizamos endpoint admin pero filtraremos en el frontend por usuario si llega el user en el JWT
-        const res = await http.get('/api/admin/orders', { params: { page: 1, limit: 50, sortBy: 'createdAt', sortOrder: 'desc' } });
+        const res = await http.get('/api/orders/my');
         setOrders(res.data?.data || []);
       } catch {
         setOrders([]);

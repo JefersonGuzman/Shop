@@ -8,7 +8,8 @@ import { ProductModel } from '../models/Product';
 export class OrderController {
   async create(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-      if (!req.user?.id) {
+      const currentUserId = (req.user as any)?.userId || (req.user as any)?.id;
+      if (!currentUserId) {
         res.status(401).json({ error: 'No autenticado' });
         return;
       }
@@ -48,7 +49,7 @@ export class OrderController {
 
       // Crear orden
       const order = await OrderModel.create({
-        customer: new Types.ObjectId(req.user.id),
+        customer: new Types.ObjectId(currentUserId),
         items,
         subtotal,
         total: subtotal,
@@ -68,6 +69,23 @@ export class OrderController {
       res.status(201).json({ success: true, data: { orderNumber: order.orderNumber, orderId: order._id } });
     } catch (error: any) {
       res.status(400).json({ error: error.message || 'Bad request' });
+    }
+  }
+
+  async myOrders(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const currentUserId = (req.user as any)?.userId || (req.user as any)?.id;
+      if (!currentUserId) {
+        res.status(401).json({ error: 'No autenticado' });
+        return;
+      }
+      const orders = await OrderModel.find({ customer: currentUserId })
+        .populate('items.product', 'name images')
+        .sort({ createdAt: -1 })
+        .lean();
+      res.json({ success: true, data: orders });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Error al obtener órdenes' });
     }
   }
 }

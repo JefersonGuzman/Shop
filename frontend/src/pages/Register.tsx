@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const API_BASE = (import.meta as any).env.VITE_API_BASE || 'http://localhost:5000';
@@ -10,6 +11,7 @@ export default function Register() {
   const [lastName, setLastName] = useState('');
   const [msg, setMsg] = useState('');
   const [msgType, setMsgType] = useState<'success' | 'error' | null>(null);
+  const navigate = useNavigate();
 
   async function submit() {
     try {
@@ -30,8 +32,9 @@ export default function Register() {
         return;
       }
       await axios.post(`${API_BASE}/api/auth/register`, { email, password, firstName, lastName });
-      setMsg('Registro exitoso, ahora puedes iniciar sesión');
+      setMsg('Registro exitoso, redirigiendo a inicio de sesión...');
       setMsgType('success');
+      navigate('/login');
     } catch {
       setMsg('Error registrando usuario');
       setMsgType('error');

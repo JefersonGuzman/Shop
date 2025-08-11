@@ -51,41 +51,44 @@ export default function Checkout() {
   }
 
   return (
-    <div className="max-w-[960px] mx-auto px-4 py-8 text-text">
+    <div className="max-w-[1120px] mx-auto px-4 py-8 text-text">
       <h1 className="text-2xl font-semibold mb-6">Proceder al pago</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <form onSubmit={submit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        {/* Card: Datos de envío y pago */}
+        <form onSubmit={submit} className="rounded-xl border border-border bg-white p-4 md:p-6 space-y-4">
+          <div className="text-sm font-semibold">Datos de envío</div>
           <div>
-            <label className="block text-sm text-mutedText mb-1">Nombre completo</label>
-            <input className="h-10 w-full rounded-md border border-border px-3" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+            <label className="block text-sm text-mutedText mb-1">Nombre completo <span className="text-red-600">*</span></label>
+            <input className="h-10 w-full rounded-md border border-border px-3" value={fullName} onChange={(e) => setFullName(e.target.value)} required autoComplete="name" placeholder="Ej: Juan Pérez" />
           </div>
           <div>
-            <label className="block text-sm text-mutedText mb-1">Dirección</label>
-            <input className="h-10 w-full rounded-md border border-border px-3" value={street} onChange={(e) => setStreet(e.target.value)} required />
+            <label className="block text-sm text-mutedText mb-1">Dirección <span className="text-red-600">*</span></label>
+            <input className="h-10 w-full rounded-md border border-border px-3" value={street} onChange={(e) => setStreet(e.target.value)} required autoComplete="address-line1" placeholder="Calle 123 #45-67" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-mutedText mb-1">Ciudad</label>
-              <input className="h-10 w-full rounded-md border border-border px-3" value={city} onChange={(e) => setCity(e.target.value)} required />
+              <label className="block text-sm text-mutedText mb-1">Ciudad <span className="text-red-600">*</span></label>
+              <input className="h-10 w-full rounded-md border border-border px-3" value={city} onChange={(e) => setCity(e.target.value)} required autoComplete="address-level2" />
             </div>
             <div>
-              <label className="block text-sm text-mutedText mb-1">Estado/Provincia</label>
-              <input className="h-10 w-full rounded-md border border-border px-3" value={state} onChange={(e) => setState(e.target.value)} required />
+              <label className="block text-sm text-mutedText mb-1">Estado/Provincia <span className="text-red-600">*</span></label>
+              <input className="h-10 w-full rounded-md border border-border px-3" value={state} onChange={(e) => setState(e.target.value)} required autoComplete="address-level1" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm text-mutedText mb-1">ZIP Code</label>
-              <input className="h-10 w-full rounded-md border border-border px-3" value={zipCode} onChange={(e) => setZipCode(e.target.value)} required />
+              <label className="block text-sm text-mutedText mb-1">ZIP Code <span className="text-red-600">*</span></label>
+              <input className="h-10 w-full rounded-md border border-border px-3" value={zipCode} onChange={(e) => setZipCode(e.target.value)} required autoComplete="postal-code" />
             </div>
             <div>
-              <label className="block text-sm text-mutedText mb-1">País</label>
-              <input className="h-10 w-full rounded-md border border-border px-3" value={country} onChange={(e) => setCountry(e.target.value)} required />
+              <label className="block text-sm text-mutedText mb-1">País <span className="text-red-600">*</span></label>
+              <input className="h-10 w-full rounded-md border border-border px-3" value={country} onChange={(e) => setCountry(e.target.value)} required autoComplete="country-name" />
             </div>
           </div>
-          <div>
-            <label className="block text-sm text-mutedText mb-1">Método de pago</label>
-            <select className="h-10 w-full rounded-md border border-border px-3" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+          <div className="pt-2">
+            <div className="text-sm font-semibold mb-2">Método de pago</div>
+            <label className="block text-sm text-mutedText mb-1">Selecciona un método <span className="text-red-600">*</span></label>
+            <select className="h-10 w-full rounded-md border border-border px-3" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} required>
               <option value="card">Tarjeta</option>
               <option value="cash">Efectivo</option>
               <option value="transfer">Transferencia</option>
@@ -99,7 +102,8 @@ export default function Checkout() {
           )}
         </form>
 
-        <aside className="bg-white border border-border rounded-md p-4 h-fit">
+        {/* Card: Resumen */}
+        <aside className="rounded-xl border border-border bg-white p-4 md:p-6 h-fit">
           <h2 className="text-lg font-semibold mb-3">Resumen</h2>
           <div className="space-y-2 text-sm max-h-56 overflow-y-auto pr-1">
             {items.map((it) => (
