@@ -158,9 +158,12 @@ export default function Header() {
                 Mi cuenta
               </button>
               {accountOpen && (
-                <div className="absolute right-0 mt-1 w-40 bg-surface border border-border rounded-md shadow-card">
+                <div className="absolute right-0 mt-1 w-44 bg-surface border border-border rounded-md shadow-card">
                   <Link to="/settings" className="block px-3 py-2 text-sm hover:bg-black/5" onClick={() => setAccountOpen(false)}>
                     Perfil
+                  </Link>
+                  <Link to="/orders" className="block px-3 py-2 text-sm hover:bg-black/5" onClick={() => setAccountOpen(false)}>
+                    Mis pedidos
                   </Link>
                   <button
                     className="w-full text-left px-3 py-2 text-sm hover:bg-black/5"

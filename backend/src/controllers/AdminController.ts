@@ -119,7 +119,7 @@ export class AdminController {
 
       // Get orders with pagination
       const orders = await OrderModel.find(filter)
-        .populate('customer', 'firstName lastName email')
+        .populate('customer', 'firstName lastName email role')
         .populate('items.product', 'name price images')
         .sort(sort)
         .skip(skip)

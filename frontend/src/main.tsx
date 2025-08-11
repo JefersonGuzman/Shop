@@ -5,6 +5,7 @@ import Home from './pages/Home.tsx'
 import ProductDetail from './pages/ProductDetail.tsx'
 import CartPage from './pages/Cart.tsx'
 import Checkout from './pages/Checkout.tsx'
+import OrdersPage from './pages/Orders.tsx'
 import HelpCenter from './pages/HelpCenter.tsx'
 import Returns from './pages/Returns.tsx'
 import Contact from './pages/Contact.tsx'
@@ -36,47 +37,52 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <CartProvider>
       <BrowserRouter>
-        <Header />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/help" element={<HelpCenter />} />
-          <Route path="/returns" element={<Returns />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/cookies" element={<Cookies />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute requireAdmin>
-                <AdminLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<AdminDashboard />} />
-            <Route path="products" element={<AdminProducts />} />
-            <Route path="offers" element={<AdminOffers />} />
-            <Route
-              path="users"
-              element={
-                <RequireRoles allowed={['admin']}>
-                  <AdminUsers />
-                </RequireRoles>
-              }
-            />
-            <Route path="orders" element={<AdminOrders />} />
-            <Route path="categories" element={<AdminCategories />} />
-            <Route path="brands" element={<AdminBrands />} />
-            <Route path="*" element={<AccessDenied />} />
-          </Route>
-        </Routes>
-        <Footer />
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+              <Route path="/help" element={<HelpCenter />} />
+              <Route path="/returns" element={<Returns />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/cookies" element={<Cookies />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<AdminDashboard />} />
+                <Route path="products" element={<AdminProducts />} />
+                <Route path="offers" element={<AdminOffers />} />
+                <Route
+                  path="users"
+                  element={
+                    <RequireRoles allowed={['admin']}>
+                      <AdminUsers />
+                    </RequireRoles>
+                  }
+                />
+                <Route path="orders" element={<AdminOrders />} />
+                <Route path="categories" element={<AdminCategories />} />
+                <Route path="brands" element={<AdminBrands />} />
+                <Route path="*" element={<AccessDenied />} />
+              </Route>
+            </Routes>
+          </main>
+          <Footer />
+        </div>
         <ChatBubble />
         <CartBubble />
       </BrowserRouter>

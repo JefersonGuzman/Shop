@@ -101,11 +101,14 @@ export default function Checkout() {
 
         <aside className="bg-white border border-border rounded-md p-4 h-fit">
           <h2 className="text-lg font-semibold mb-3">Resumen</h2>
-          <div className="space-y-2 text-sm">
+          <div className="space-y-2 text-sm max-h-56 overflow-y-auto pr-1">
             {items.map((it) => (
-              <div key={it.productId} className="flex items-center justify-between">
-                <span className="truncate mr-2">{it.name} × {it.quantity}</span>
-                <span className="font-medium">${formatMoney(it.price * it.quantity)}</span>
+              <div key={it.productId} className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="w-10 h-10 rounded border border-border bg-center bg-cover flex-shrink-0" style={{ backgroundImage: `url(${it.image || ''})` }} />
+                  <span className="truncate">{it.name} × {it.quantity}</span>
+                </div>
+                <span className="font-medium whitespace-nowrap">${formatMoney(it.price * it.quantity)}</span>
               </div>
             ))}
           </div>
