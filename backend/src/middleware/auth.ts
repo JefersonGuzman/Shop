@@ -21,8 +21,10 @@ export function authenticateToken(
     const decoded = jwt.verify(token, process.env.JWT_SECRET || '');
     req.user = decoded as any;
     next();
-  } catch {
-    res.status(403).json({ error: 'Invalid token' });
+  } catch (err: any) {
+    // Devolver 401 para que el frontend pueda intentar refresh automáticamente
+    const isExpired = err?.name === 'TokenExpiredError';
+    res.status(401).json({ error: isExpired ? 'Token expired' : 'Invalid token' });
   }
 }
 

@@ -1,245 +1,164 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { http } from '../../lib/http';
 
+// Define the structure of the analytics data
+interface SalesAnalytics {
+  range: { from: string; to: string };
+  salesByDay: { date: string; total: number; orders: number }[];
+  salesByCategory: { category: string; total: number; quantity: number }[];
+  salesByProduct: { productId: string; name: string; total: number; quantity: number }[];
+}
+
 export default function AdminDashboard() {
+  const [analytics, setAnalytics] = useState<SalesAnalytics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await http.get('/api/admin/analytics/sales');
+        setAnalytics(res.data?.data || null);
+        setError(null);
+      } catch (e: any) {
+        setError(e.message || 'Error al cargar los datos');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) {
+    return <div className="text-center p-8">Cargando panel...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center p-8 text-red-500">Error: {error}</div>;
+  }
+
+  if (!analytics) {
+    return <div className="text-center p-8">No hay datos de analíticas disponibles.</div>;
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Panel de control</h1>
-      <Kpis />
+      <Kpis data={analytics} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Analytics />
-        <CategoryChart />
+        <SalesChart data={analytics.salesByDay} />
+        <CategoryChart data={analytics.salesByCategory} />
       </div>
-      <ProductSalesTable />
+      <ProductSalesTable data={analytics.salesByProduct} />
     </div>
   );
 }
 
-function Kpis() {
-  const [kpis, setKpis] = useState<{ sales: number; orders: number; products: number } | null>(null);
-  useEffect(() => {
-    (async () => {
-      try {
-        const [ordersRes, productsRes] = await Promise.all([
-          http.get('/api/admin/orders', { params: { page: 1, limit: 100, sortBy: 'createdAt', sortOrder: 'desc' } }),
-          http.get('/api/products', { params: { page: 1, limit: 1 } }),
-        ]);
-        const orders = ordersRes.data?.data || [];
-        const totalSales = orders.reduce((s: number, o: any) => s + (o.total || 0), 0);
-        setKpis({ sales: totalSales, orders: orders.length, products: productsRes.data?.pagination?.total || 0 });
-      } catch {}
-    })();
-  }, []);
+function Kpis({ data }: { data: SalesAnalytics }) {
+  const { totalSales, totalOrders, totalProducts } = useMemo(() => {
+    const totalSales = data.salesByDay.reduce((sum, day) => sum + day.total, 0);
+    const totalOrders = data.salesByDay.reduce((sum, day) => sum + day.orders, 0);
+    // We can't get total products from the analytics endpoint, so we'll leave it for now or fetch separately if needed.
+    // For this version, we'll derive it from the sales by product list.
+    const totalProducts = data.salesByProduct.length;
+    return { totalSales, totalOrders, totalProducts };
+  }, [data]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <div className="rounded-xl border border-border bg-surface p-5 shadow-card">
-        <div className="text-sm text-mutedText">Ventas</div>
-        <div className="mt-2 text-2xl font-bold text-text">${(kpis?.sales || 0).toLocaleString()}</div>
-        <div className="mt-1 text-xs text-mutedText">Acumulado</div>
+        <div className="text-sm text-mutedText">Ventas Totales</div>
+        <div className="mt-2 text-2xl font-bold text-text">${totalSales.toLocaleString()}</div>
+        <div className="mt-1 text-xs text-mutedText">En el período seleccionado</div>
       </div>
       <div className="rounded-xl border border-border bg-surface p-5 shadow-card">
-        <div className="text-sm text-mutedText">Órdenes</div>
-        <div className="mt-2 text-2xl font-bold text-text">{kpis?.orders || 0}</div>
-        <div className="mt-1 text-xs text-mutedText">Totales</div>
+        <div className="text-sm text-mutedText">Órdenes Totales</div>
+        <div className="mt-2 text-2xl font-bold text-text">{totalOrders.toLocaleString()}</div>
+        <div className="mt-1 text-xs text-mutedText">En el período seleccionado</div>
       </div>
       <div className="rounded-xl border border-border bg-surface p-5 shadow-card">
-        <div className="text-sm text-mutedText">Productos</div>
-        <div className="mt-2 text-2xl font-bold text-text">{kpis?.products || 0}</div>
-        <div className="mt-1 text-xs text-mutedText">Activos</div>
+        <div className="text-sm text-mutedText">Productos Vendidos</div>
+        <div className="mt-2 text-2xl font-bold text-text">{totalProducts}</div>
+        <div className="mt-1 text-xs text-mutedText">Tipos de productos distintos</div>
       </div>
     </div>
   );
 }
 
-function Analytics() {
-  const [data, setData] = useState<{ salesByDay: { date: string; total: number }[] } | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await http.get('/api/admin/analytics/sales');
-        setData(res.data?.data || null);
-      } catch (e: any) {
-        // Fallback: calcular por día desde /orders si la ruta aún no está disponible
-        try {
-          const res = await http.get('/api/admin/orders', { params: { page: 1, limit: 200, sortBy: 'createdAt', sortOrder: 'asc' } });
-          const orders = res.data?.data || [];
-          const byDay = new Map<string, number>();
-          orders.forEach((o: any) => {
-            const d = new Date(o.createdAt).toISOString().slice(0, 10);
-            byDay.set(d, (byDay.get(d) || 0) + (o.total || 0));
-          });
-          const salesByDay = Array.from(byDay.entries()).map(([date, total]) => ({ date, total }));
-          setData({ salesByDay });
-        } catch {}
-      }
-    })();
-  }, []);
-
-  const series = useMemo(() => {
-    const rows = (data?.salesByDay || []).sort((a, b) => a.date.localeCompare(b.date));
-    return rows.map((r) => ({ d: r.date, v: r.total }));
+function SalesChart({ data }: { data: SalesAnalytics['salesByDay'] }) {
+  const chartData = useMemo(() => {
+    return data.map((d) => ({
+      ...d,
+      date: new Date(d.date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }),
+    }));
   }, [data]);
 
-  // Cálculos para barras
-  const max = Math.max(1, ...series.map((s) => s.v));
-  const barWidthPct = series.length > 0 ? Math.max(6, Math.min(16, Math.floor(80 / series.length))) : 8;
-
   return (
-    <div className="grid grid-cols-1 gap-6 mb-8">
-      <div className="rounded-xl border border-border bg-surface p-5 shadow-card">
-        <div className="text-sm text-mutedText mb-2">Ventas por día</div>
-        <div className="h-48 w-full">
-          {series.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-xs text-mutedText">Sin datos</div>
-          ) : (
-            <div className="relative h-full w-full">
-              <div className="absolute inset-0">
-                {[0, 0.25, 0.5, 0.75, 1].map((t) => (
-                  <div key={t} className="absolute left-0 right-0 border-t border-border" style={{ bottom: `${t * 100}%`, opacity: 0.5 }} />
-                ))}
-              </div>
-              <div className="absolute inset-2 flex items-end gap-2">
-                {series.map((p) => (
-                  <div key={p.d} className="flex-1 flex flex-col items-center" style={{ minWidth: `${barWidthPct}px` }}>
-                    <div
-                      className="w-full bg-[#0b1625] rounded-t"
-                      style={{ height: `${Math.max(2, (p.v / max) * 90)}%` }}
-                      title={`${p.d} - $${p.v.toLocaleString()}`}
-                    />
-                    <div className="mt-1 text-[10px] text-mutedText truncate w-full text-center" title={p.d}>
-                      {p.d.slice(5)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+    <div className="rounded-xl border border-border bg-surface shadow-card p-3">
+      <div className="text-sm text-mutedText mb-4">Ventas por día</div>
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={chartData} margin={{ top: 10, right: 20, left: 60, bottom: 20 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+          <XAxis dataKey="date" stroke="rgba(14, 14, 14, 0.7)" fontSize={12} />
+          <YAxis width={70} tickMargin={6} stroke="rgba(27, 27, 27, 0.7)" fontSize={12} tickFormatter={(value) => `$${Number(value).toLocaleString()}`} />
+          <Tooltip
+            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }}
+            labelStyle={{ color: '#f3f4f6' }}
+          />
+          <Legend wrapperStyle={{ fontSize: '14px' }} />
+          <Line type="monotone" dataKey="total" name="Ventas" stroke="#8884d8" strokeWidth={2} />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }
 
-function CategoryChart() {
-  const [data, setData] = useState<{ salesByCategory: { category: string; total: number }[] } | null>(null);
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await http.get('/api/admin/analytics/sales');
-        setData(res.data?.data || null);
-      } catch {
-        // Fallback robusto: agrupar por categoría desde /orders + mapeo por productId usando /products
-        try {
-          const res = await http.get('/api/admin/orders', {
-            params: { page: 1, limit: 200, sortBy: 'createdAt', sortOrder: 'asc' },
-          });
-          const orders = res.data?.data || [];
-
-          // Construir mapa productId -> categoría desde /api/products
-          let productIdToCategory = new Map<string, string>();
-          try {
-            const pr = await http.get('/api/products', { params: { page: 1, limit: 1000 } });
-            const products: any[] = pr.data?.data || pr.data?.products || [];
-            products.forEach((p: any) => {
-              const id = String(p._id || '');
-              if (id) productIdToCategory.set(id, p.category || 'Uncategorized');
-            });
-          } catch {}
-
-          const map = new Map<string, number>();
-          orders.forEach((o: any) => {
-            (o.items || []).forEach((it: any) => {
-              const id = String(it?.product?._id || it?.product || '');
-              const cat = it?.product?.category || productIdToCategory.get(id) || 'Uncategorized';
-              map.set(cat, (map.get(cat) || 0) + (it?.subtotal || 0));
-            });
-          });
-          const rows = Array.from(map.entries())
-            .map(([category, total]) => ({ category, total }))
-            .sort((a, b) => b.total - a.total);
-          setData({ salesByCategory: rows });
-        } catch {}
-      }
-    })();
-  }, []);
-
-  const rows = (data?.salesByCategory || []).filter((r) => r && typeof r.total === 'number');
-  const max = Math.max(1, ...rows.map((r) => r.total));
-
-  return (
-    <div className="rounded-xl border border-border bg-surface p-5 shadow-card mb-8">
-      <div className="text-sm text-mutedText mb-3">Ventas por categoría</div>
-      <div className="space-y-3">
-        {rows.length === 0 ? (
-          <div className="text-xs text-mutedText">Sin datos</div>
-        ) : rows.map((r) => (
-          <div key={r.category} className="flex items-center gap-3">
-            <div className="w-36 text-xs text-mutedText truncate">{r.category}</div>
-            <div className="flex-1 h-3 bg-background rounded-xl overflow-hidden border border-border">
-              <div
-                className="h-full bg-[#0b1625]"
-                style={{ width: `${(r.total / max) * 100}%` }}
-              />
-            </div>
-            <div className="w-24 text-right text-xs text-text">${r.total.toLocaleString()}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ProductSalesTable() {
-  const [data, setData] = useState<{ salesByProduct: { productId: string; name: string; quantity: number; total: number }[] } | null>(null);
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await http.get('/api/admin/analytics/sales');
-        setData(res.data?.data || null);
-      } catch {
-        // Fallback: agrupar por producto desde /orders
-        try {
-          const res = await http.get('/api/admin/orders', { params: { page: 1, limit: 200, sortBy: 'createdAt', sortOrder: 'asc' } });
-          const orders = res.data?.data || [];
-          const map = new Map<string, { name: string; total: number; quantity: number }>();
-          orders.forEach((o: any) => {
-            (o.items || []).forEach((it: any) => {
-              const id = it?.product?._id || it?.product;
-              const name = it?.product?.name || 'Unnamed';
-              const entry = map.get(id) || { name, total: 0, quantity: 0 };
-              entry.total += it?.subtotal || 0;
-              entry.quantity += it?.quantity || 0;
-              map.set(id, entry);
-            });
-          });
-          const rows = Array.from(map.entries()).map(([productId, v]) => ({ productId, name: v.name, total: v.total, quantity: v.quantity }));
-          setData({ salesByProduct: rows });
-        } catch {}
-      }
-    })();
-  }, []);
-
-  const rows = data?.salesByProduct || [];
+function CategoryChart({ data }: { data: SalesAnalytics['salesByCategory'] }) {
+    const chartData = useMemo(() => data.slice(0, 10).sort((a, b) => a.total - b.total), [data]);
 
   return (
     <div className="rounded-xl border border-border bg-surface p-5 shadow-card">
-      <div className="text-sm text-mutedText mb-3">Ventas por producto</div>
+      <div className="text-sm text-mutedText mb-4">Top 10 - Ventas por Categoría</div>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={chartData} layout="vertical" margin={{ top: 10, right: 20, left: 40, bottom: 20 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+          <XAxis type="number" stroke="rgba(5, 5, 5, 0.7)" fontSize={12} tickFormatter={(value) => `$${Number(value).toLocaleString()}`} />
+          <YAxis dataKey="category" type="category" stroke="rgba(10, 10, 10, 0.7)" color="red" fontSize={12} width={80} tick={{ textAnchor: 'end' }} />
+          <Tooltip
+            contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151' }}
+            labelStyle={{ color: '#f3f4f6' }}
+            formatter={(value: number) => `$${value.toLocaleString()}`}
+          />
+          <Legend wrapperStyle={{ fontSize: '14px' }} />
+          <Bar dataKey="total" name="Ventas" fill="#82ca9d" />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function ProductSalesTable({ data }: { data: SalesAnalytics['salesByProduct'] }) {
+  const topProducts = useMemo(() => data.slice(0, 15), [data]);
+
+  return (
+    <div className="rounded-xl border border-border bg-surface p-5 shadow-card">
+      <div className="text-sm text-mutedText mb-3">Top 15 - Productos más vendidos</div>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="text-left text-mutedText border-b border-border">
-              <th className="py-2 pr-4">Producto</th>
-              <th className="py-2 pr-4">Unidades</th>
-              <th className="py-2 pr-4">Ventas</th>
+              <th className="py-2 pr-4 font-medium">Producto</th>
+              <th className="py-2 pr-4 font-medium text-right">Unidades</th>
+              <th className="py-2 pr-4 font-medium text-right">Ventas Totales</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.productId} className="border-b border-border/60">
-                <td className="py-2 pr-4 text-text">{r.name}</td>
-                <td className="py-2 pr-4 text-text">{r.quantity}</td>
-                <td className="py-2 pr-4 text-text">${r.total.toLocaleString()}</td>
+            {topProducts.map((p) => (
+              <tr key={p.productId} className="border-b border-border/60 hover:bg-white/5">
+                <td className="py-2 pr-4 text-text">{p.name}</td>
+                <td className="py-2 pr-4 text-text text-right">{p.quantity.toLocaleString()}</td>
+                <td className="py-2 pr-4 text-text text-right">${p.total.toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
@@ -248,5 +167,3 @@ function ProductSalesTable() {
     </div>
   );
 }
-
-

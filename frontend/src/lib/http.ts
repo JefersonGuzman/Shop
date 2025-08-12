@@ -60,7 +60,7 @@ http.interceptors.response.use(
       throw error;
     }
 
-    if (status === 401 && !original._retry) {
+    if ((status === 401 || status === 403) && !original._retry) {
       original._retry = true;
       if (isRefreshing) {
         await new Promise<void>((resolve) => pending.push(resolve));

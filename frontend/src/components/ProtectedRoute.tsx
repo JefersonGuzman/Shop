@@ -16,13 +16,26 @@ function decodeRoleFromJwt(token: string): 'admin' | 'employee' | 'customer' | n
   }
 }
 
+function isJwtExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    const exp = typeof payload?.exp === 'number' ? payload.exp : 0;
+    if (!exp) return false;
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    return exp <= nowSeconds;
+  } catch {
+    return true;
+  }
+}
+
 export default function ProtectedRoute({ children, requireAdmin = false }: Props) {
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
     const ensureAuth = async () => {
       let token = localStorage.getItem('accessToken') || '';
-      if (!token) {
+      // Si no hay token o está expirado, intentar refrescar
+      if (!token || isJwtExpired(token)) {
         // Intentar refrescar con refreshToken
         const refresh = localStorage.getItem('refreshToken');
         if (refresh) {
@@ -37,8 +50,12 @@ export default function ProtectedRoute({ children, requireAdmin = false }: Props
               localStorage.setItem('accessToken', data.accessToken);
               if (data.refreshToken) localStorage.setItem('refreshToken', data.refreshToken);
               token = data.accessToken;
+            } else {
+              token = '';
             }
-          } catch {}
+          } catch {
+            token = '';
+          }
         }
       }
 
